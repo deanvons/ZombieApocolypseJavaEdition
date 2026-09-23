@@ -65,7 +65,7 @@ public abstract class Survivor {
     }
 
     public void setName(String name) {
-        name = name;
+        this.name = name;
     }
 
     public List<Skill> getSkills() {
