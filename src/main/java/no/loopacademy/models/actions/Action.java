@@ -3,11 +3,12 @@ package no.loopacademy.models.actions;
 import no.loopacademy.models.attributes.AttributeWeights;
 
 public class Action {
-    String name;
-    ActionType type;
-    String effect;
-    String target = "";
-    AttributeWeights attributeWeights;
+    private Long id;
+    private String name;
+    private ActionType type;
+    private String effect;
+    private String target = "";
+   private  AttributeWeights attributeWeights;
 
     public Action(String name, ActionType type, String effect, String target, AttributeWeights attributeWeights) {
         this.name = name;
@@ -16,6 +17,10 @@ public class Action {
         this.target = target;
         this.attributeWeights = attributeWeights;
     }
+
+    public Long getId() {return id;}
+
+    public void setId(Long id){this.id = id;}
 
     public String getName() {
         return name;
