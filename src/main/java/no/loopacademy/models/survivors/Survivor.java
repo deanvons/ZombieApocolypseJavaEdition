@@ -11,6 +11,8 @@ import no.loopacademy.models.skills.Skill;
 
 public abstract class Survivor {
 
+    private Long id;
+
     private String name;
 
     private List<Skill> skills = new ArrayList<>();
@@ -61,6 +63,10 @@ public abstract class Survivor {
 
 
     // Getters and setters
+    public Long getId(){ return id;}
+
+    public void setId(Long id){this.id = id;}
+
     public String getName() {
         return name;
     }
