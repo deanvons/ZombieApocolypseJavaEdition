@@ -3,13 +3,16 @@ package survivor;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.attributes.SurvivorAttributes;
+import no.loopacademy.models.items.Item;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SurvivorTests {
 
@@ -47,7 +50,6 @@ public class SurvivorTests {
     @Test
     void caregiverShouldBeCreatedWithCorrectSkills() {
 
-
         CareGiver john = new CareGiver("John");
         List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport);
         List<Skill> actualSkills = john.getSkills();
@@ -55,8 +57,21 @@ public class SurvivorTests {
         // Assert
         assertEquals(expectedSkills, actualSkills);
 
-
     }
 
+    @Test
+    void load_ShouldThrowCarryWeightExceededException_WhenLoadingAnItemThatExceedsMaxWeight() {
+        // Arrange
+        String expectedName = "Melvin";
+        Double heavyItemweight = 9999.0;
+        // Act
+        CareGiver c = new CareGiver(expectedName);
+        Item testItem = new Item("Test item", heavyItemweight);
+
+        // Assert
+        assertThrows(CarryWeightExceededException.class, () -> c.load(testItem));
+       
+
+    }
 
 }
