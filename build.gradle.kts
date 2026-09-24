@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("org.springframework.boot") version "3.4.13"
     id("io.spring.dependency-management") version "1.1.7"
+    application
 }
 
 group = "no.loopacademy"
@@ -25,4 +26,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+     testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+application {
+    mainClass.set("no.loopacademy.Main")
 }

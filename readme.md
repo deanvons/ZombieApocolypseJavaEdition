@@ -1,133 +1,81 @@
-# Intellij and Java basics
+# Zombie Apocalypse – Java Edition
 
-Notes
+A small zombie apocalypse class library: survivors with attributes, skills, gear and actions. It's also the starting point for the course's flagship full stack app.
 
-## Intellij
+The plan is to grow it into a **Survivor Manager**. Each player joins the camp as one survivor, equips them, and sees how well they perform actions.
 
-- IntelliJ is an all-in-one dev environment for Java and Spring
-- JDKs added by IntelliJ go into a shared folder (`~/.jdks`)
-    - If you install a JDK yourself, it will be in a different folder. Stick to the one from IntelliJ — less chance of conflicts.
-- Build systems: Maven and Gradle
-    - Both manage dependencies and automate builds.
-    - Maven: XML-based, simple structure.
-    - Gradle: Uses Groovy/Kotlin DSL, more flexible, required for Kotlin projects.
-    - Gradle is faster after the first build (thanks to caching), but slower on the first run.
-- When creating a new project:
-    - Gradle distribution: --Wrapper-- (recommended — the other option requires Gradle to be installed separately).
-    - Ensures each project uses the Gradle version it was built with.
-    - Auto-select Gradle version: Lets IntelliJ pick the latest compatible version.
-    - GroupId: Like a reverse domain (e.g. `no.noroff.accelerate`) — identifies your organization or project namespace.
-    - ArtifactId: The project name (e.g. `ZombieApocalypseDean`) — forms part of the final package name.
-    - Tick --“Add sample code”-- to ensure IntelliJ creates a basic `Main.java` and prevents the folder structure from being empty (important for Git).
-- IntelliJ now creates the standard folder structure by default (`src/main/java`, `src/test/java`, etc.)
-    - These are automatically marked as --Sources Root-- and --Test Sources Root-- (blue and green icons).
-    - If you manually add folders later, you may need to mark them yourself.
-- Git doesn’t track empty folders, so if you skip "Add sample code," key folders might go missing when pushed.
-    - You can add a `.gitkeep` file inside empty folders to keep them in version control.
-- Blue folders in IntelliJ mean the folder is marked as a Sources Root — IntelliJ will compile Java files from here.
-    - Packages (like org.example) won’t show until you add a class inside them — empty packages are hidden by default.
-- Package names should always be lowercase with dot separators (e.g. no.noroff.zombiegame) — no camelCase or underscores.
+| Layer | Tech |
+|---|---|
+| API | Spring Boot (controller → service → repository) |
+| Database | PostgreSQL with Hibernate / Spring Data JPA |
+| Auth | Keycloak (OAuth2 / JWT) |
+| Frontend | React (Vite) |
 
-## Naming
+## Current status
 
-- Only classes and interfaces use PascalCase — everything else (methods, variables, parameters) uses camelCase.
+**Pre-Spring Boot.** This is still a plain Java + Gradle class library with JUnit 5 tests. There's no web API or database yet.
 
-## Testing
+| Phase | What | Status |
+|---|---|---|
+| Prep | Clean up the class library (custom exceptions, tests passing) | In progress |
+| 0 | Add Spring Boot, health endpoint | Next |
+| 1 | Service layer (in memory) | |
+| 2 | REST controllers + DTOs | |
+| 3 | PostgreSQL + JPA entities | |
+| 4 | Keycloak security, `Player` profile | |
+| 5 | React frontend | |
 
-- Test classes don’t need accessors (public/private) — they can use default/package-private visibility.
+## Prerequisites
 
-## Equality generator
+- **JDK 21**
+- Nothing else: the Gradle wrapper (`gradlew`) downloads the right Gradle version for you.
 
-### You’re generating `equals()` for your class.
+## Build, run and test
 
-IntelliJ is asking: **how strict do you want to be when comparing two objects?**
+Run these from the project root. On Windows PowerShell use `.\gradlew`, and on macOS, Linux or Git Bash use `./gradlew`.
 
----
+| Command | What it does |
+|---|---|
+| `./gradlew build` | Compiles everything and runs all tests |
+| `./gradlew run` | Runs `no.loopacademy.Main` |
+| `./gradlew test` | Runs the tests and prints `PASSED` / `FAILED` for each one |
+| `./gradlew test --rerun` | Forces the tests to run again, even if nothing changed |
 
-### Option 1: `instanceof` (the relaxed, more flexible one)
+**Why doesn't `./gradlew test` always run anything?** If nothing has changed since the last run, Gradle marks the task `UP-TO-DATE` and skips it. The previous results still stand. Use `--rerun` to run the tests anyway.
 
-This says:
+**Test report:** after a test run, open `build/reports/tests/test/index.html` in a browser for the full results.
 
-> “If the other object is the same class *or a subclass*, and the fields match, they’re equal.”
+**From the IDE:** click the green ▶ next to `main` in `Main.java`, or next to any test class or method.
 
-✅ Good if you’re using inheritance (like `Tool extends Item`)
-✅ Lets `Tool` and other subtypes of `Item` still compare as equals
-✅ This is how most Java code is written — it’s the common choice
+Once Spring Boot is added (Phase 0), the app will start with `./gradlew bootRun` instead of `./gradlew run`.
 
----
+## Project structure
 
-### Option 2: `getClass()` (strict, no funny business)
-
-This says:
-
-> “Only objects of *exactly* the same class can be equal — not subclasses.”
-
-❌ `Tool` and another subclass of `Item` would **never** be equal
-✅ Good if your class won’t be extended and you want to be extra precise
-❌ Often too strict in real-world code using inheritance
-
----
-
-### TL;DR:
-
-* Choose **`instanceof`** if you're working with inheritance (like `Tool extends Item`) — it's flexible and safe for most cases.
-* Choose **`getClass()`** only if you're sure you don't want subclasses to ever be considered equal — it's strict and rare.
-
-
-> “I'm writing `equals()` for `Tool`, but I also want it to compare the fields from its parent class `Item` (like `name` and `weight`). How do I include those?”
-
----
-
-### ✅ Simple: call `super.equals(o)` inside your `Tool.equals()`
-
-Here’s how:
-
-```java
-@Override
-public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Tool)) return false;
-    if (!super.equals(o)) return false; // 👈 This compares the fields from Item
-
-    Tool tool = (Tool) o;
-    return Double.compare(tool.durability, durability) == 0;
-}
+```
+src/main/java/no/loopacademy/
+├── Main.java
+├── exceptions/     CarryWeightExceededException
+└── models/
+    ├── actions/    Action, ActionType
+    ├── attributes/ GeneralAttributes, SurvivorAttributes, AttributeWeights
+    ├── items/      Item, Weapon, Tool, WeaponCategory
+    ├── skills/     Skill (enum)
+    └── survivors/  Survivor (abstract), CareGiver, TestSurvivor
+src/test/java/      ActionTests, ItemTests, SurvivorTests
 ```
 
-This makes sure:
+## How the domain works
 
-1. The object is a `Tool` (or subclass, if using `instanceof`)
-2. The parent class `Item.equals()` returns true (i.e. same `name`, `weight`, etc.)
-3. Then it compares the child-specific field, `durability`.
+- A **survivor** has 7 attributes: strength, endurance, agility, courage, intelligence, leadership and trustworthiness. They also have a list of **skills** and their **gear**.
+- **Carry limit:** a survivor can carry up to `10 + strength × 3` kg. Loading more throws `CarryWeightExceededException`.
+- An **action** has a weight for each attribute. A survivor's score for an action is `sum(attribute × weight) × 10`.
 
----
+## Design decisions
 
-### 🔄 Don’t forget: override `equals()` in the parent too!
+These are the two decisions the course is built around. The full reasoning is in the roadmap.
 
-In `Item`, add:
-
-```java
-@Override
-public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof Item)) return false;
-
-    Item item = (Item) o;
-    return Objects.equals(name, item.name) &&
-           Objects.equals(weight, item.weight);
-}
-
-@Override
-public int hashCode() {
-    return Objects.hash(name, weight);
-}
-```
-
----
-
-### 🧠 Bonus Tip: IntelliJ will *not* do this automatically
-
-When generating `equals()` in IntelliJ, it **doesn’t include superclass fields** unless you manually add `super.equals(o)` yourself.
-
+1. **Behaviour stays on the entity when it only uses the entity's own state.** `performAction()` and `load()` stay on `Survivor`. Services handle loading data, security and transactions.
+   *Principle:* an entity must never reach out to the database, other services or the current user.
+2. **Keycloak owns identity, and our database owns the game.** A `Player` profile is linked to Keycloak by the `sub` claim, and each player has exactly one survivor. Anyone can view a survivor, but only its owner can change it.
 
 
