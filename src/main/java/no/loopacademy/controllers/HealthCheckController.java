@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController 
-@RequestMapping("/healthcheck")
+@RequestMapping("/api/health")
 public class HealthCheckController {
 
     @GetMapping
-    public ResponseEntity<Map<String, String>> getHealthCheck() {
-        return ResponseEntity.ok(Map.of("status", "UP"));
+    public ResponseEntity<Void> getHealthCheck() {
+        return ResponseEntity.ok().build();
     }
 }
