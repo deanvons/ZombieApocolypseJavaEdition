@@ -1,12 +1,13 @@
 package no.loopacademy.models.survivors;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import no.loopacademy.exceptions.CarryWeightExceededException;
+import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
-import no.loopacademy.models.actions.Action;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class Survivor {
 
@@ -31,7 +32,7 @@ public abstract class Survivor {
         }
 
         if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
-            throw new Exception("Too much weight");
+            throw new CarryWeightExceededException("Too much weight");
         } else {
             gear.add(item);
         }

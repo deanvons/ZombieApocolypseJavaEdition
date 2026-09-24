@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    application
 }
 
 group = "no.loopacademy"
@@ -16,4 +17,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+     testLogging {
+        events("passed", "skipped", "failed")
+    }
+}
+
+application {
+    mainClass.set("no.loopacademy.Main")
 }
