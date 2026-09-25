@@ -1,3 +1,5 @@
+package no.loopacademy.models.survivors;
+
 import java.util.List;
 
 import no.loopacademy.models.attributes.SurvivorAttributes;
@@ -19,7 +21,14 @@ public enum SurvivorType{
         createAttributes(7,9,1,5,6,6,3),
         List.of(Skill.ImprovisedCombat, Skill.StealthCombat, Skill.Intimidation, Skill.TrapSetting)
 
+    ),
+    
+    TESTSURVIVOR(
+        createAttributes(10,10,10,10,10,10,10),
+        List.of(Skill.WeaponMaintenance, Skill.BluntWeapons)
     );
+
+
 
     private final SurvivorAttributes defaultAttributes;
     private final List<Skill> defaultSkills;
@@ -48,7 +57,7 @@ public enum SurvivorType{
             attributes.setCourage(courage);
             attributes.setEndurance(endurance);
             attributes.setLeadership(leadership);
-            
+
             return attributes;
 
     }
