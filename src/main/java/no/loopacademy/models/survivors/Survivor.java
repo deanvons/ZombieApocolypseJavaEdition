@@ -34,7 +34,7 @@ public abstract class Survivor {
         }
 
         if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
-            throw new CarryWeightExceededException("Too much weight");
+            throw new CarryWeightExceededException("I can't carry anymore");
         } else {
             gear.add(item);
         }
