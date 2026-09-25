@@ -1,7 +1,9 @@
 package no.loopacademy.services;
 
 
+import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.models.items.Item;
 import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorTypes;
@@ -40,6 +42,16 @@ public class SurvivorService {
         } catch(NullPointerException e){
             throw new SurvivorNotFoundException("Survivor with id:"+id+" Not Found");
         }
+    }
+
+    public void loadItem(Long id, Item item){
+        try {
+            Survivor survivor = findById(id);
+            survivor.load(item); 
+        } catch(Exception e){
+            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
+        }
+               
     }
 
 }
