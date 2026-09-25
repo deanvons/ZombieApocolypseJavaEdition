@@ -14,4 +14,9 @@ public class HealthCheckController {
   public ResponseEntity<Void> getHealthCheck() {
     return ResponseEntity.ok().build();
   }
+
+    @GetMapping("new")
+  public ResponseEntity<Void> getHealthCheck() {
+    return ResponseEntity.ok().build();
+  }
 }
