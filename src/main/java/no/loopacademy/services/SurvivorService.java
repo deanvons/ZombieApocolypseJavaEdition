@@ -41,5 +41,4 @@ public class SurvivorService {
             throw new SurvivorNotFoundException("Survivor with id:"+id+" Not Found");
         }
     }
-
 }
