@@ -43,7 +43,7 @@ public class SurvivorService {
         }
         return survivor;
     }
-
+  
     public void addSkill(Long id, Skill skill) {
         Survivor survivor = findById(id);
         List<Skill> skills = new ArrayList<>(survivor.getSkills());
@@ -60,5 +60,4 @@ public class SurvivorService {
         skills.remove(skill);
         survivor.setSkills(skills);
     }
-
 }
