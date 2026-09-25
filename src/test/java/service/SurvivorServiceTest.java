@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
+import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
@@ -95,6 +97,43 @@ public class SurvivorServiceTest {
         List<Skill> actualOutput = survivorService.findById(1L).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
+    }
+
+    @Test
+    void survivorServiceLoadItem_SurvivorIdItem_shouldThrowException() {
+        // ARRANGE
+        String survivorName = "Kevin";
+        double itemWeight = 500000.0;
+        SurvivorService service = new SurvivorService();
+        Survivor survivor = service.create(survivorName, SurvivorType.CAREGIVER);
+        Item item = new Item("Medkit", itemWeight);
+        long survivorId = survivor.getId();
+
+        // ACT & ASSERT
+        assertThrows(OverloadedException.class, () -> {
+            service.loadItem(survivorId, item);
+        });
+    }
+
+    @Test
+    void survivorServiceLoadItem_SurvivorIdItem_shouldLoadItemToSurvivor() {
+        // ARRANGE
+        String survivorName = "Kevin";
+        double itemWeight = 5.0;
+        Item item = new Item("Medkit", itemWeight);
+        List<Item> expextedGearList = new ArrayList<>();
+        expextedGearList.add(item);
+        SurvivorService service = new SurvivorService();
+        Survivor survivor = service.create(survivorName, SurvivorType.CAREGIVER);
+
+        long survivorId = survivor.getId();
+
+        // ACT
+        service.loadItem(survivorId, item);
+        List<Item> actualGear = survivor.getGear();
+
+        // ASSERT
+        assertEquals(expextedGearList, actualGear);
     }
 
 }

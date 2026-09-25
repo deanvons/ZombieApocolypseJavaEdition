@@ -1,6 +1,8 @@
 package no.loopacademy.services;
 
+import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
@@ -43,7 +45,7 @@ public class SurvivorService {
         }
         return survivor;
     }
-  
+
     public void addSkill(Long id, Skill skill) {
         Survivor survivor = findById(id);
         List<Skill> skills = new ArrayList<>(survivor.getSkills());
@@ -60,4 +62,15 @@ public class SurvivorService {
         skills.remove(skill);
         survivor.setSkills(skills);
     }
+
+    public void loadItem(Long id, Item item) {
+        try {
+            Survivor survivor = findById(id);
+            survivor.load(item);
+        } catch (Exception e) {
+            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
+        }
+
+    }
+
 }
