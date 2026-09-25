@@ -1,0 +1,22 @@
+# Local development database. Start with: docker compose up -d
+# Reset (wipes all data): docker compose down -v
+services:
+  db:
+    image: postgres:16
+    container_name: zombie-db
+    environment:
+      POSTGRES_DB: zombies
+      POSTGRES_USER: zombie
+      POSTGRES_PASSWORD: zombie
+    ports:
+      - "5433:5432"
+    volumes:
+      - zombie-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zombie -d zombies"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zombie-db-data:
