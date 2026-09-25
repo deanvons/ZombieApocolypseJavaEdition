@@ -36,11 +36,13 @@ public class SurvivorService {
     }
 
     public Survivor findById(Long id) {
-        try {
-            return survivors.get(id);
-        } catch (NullPointerException e) {
-            throw new SurvivorNotFoundException("Survivor with id:" + id + " Not Found");
+        Survivor survivor = survivors.get(id);
+
+        if (survivor == null) {
+            throw new SurvivorNotFoundException(
+                    "Survivor with id: " + id + " not found");
         }
+        return survivor;
     }
 
     public void addSkill(Long id, Skill skill) {
