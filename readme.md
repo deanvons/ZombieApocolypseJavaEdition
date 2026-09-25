@@ -17,10 +17,10 @@ The plan is to grow it into a **Survivor Manager**. Each player joins the camp a
 
 | Phase | What | Status |
 |---|---|---|
-| Prep | Clean up the class library (custom exceptions, tests passing) | In progress |
-| 0 | Add Spring Boot, health endpoint | Next |
-| 1 | Service layer (in memory) | |
-| 2 | REST controllers + DTOs | |
+| Prep | Clean up the class library (custom exceptions, tests passing) | Completed |
+| 0 | Add Spring Boot, health endpoint | Completed |
+| 1 | Service layer (in memory) | In Progress |
+| 2 | REST controllers + DTOs | In Progress |
 | 3 | PostgreSQL + JPA entities | |
 | 4 | Keycloak security, `Player` profile | |
 | 5 | React frontend | |
