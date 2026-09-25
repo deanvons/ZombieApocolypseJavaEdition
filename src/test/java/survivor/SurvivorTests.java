@@ -50,7 +50,7 @@ public class SurvivorTests {
     void caregiverShouldBeCreatedWithCorrectSkills() {
 
         Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
-        List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport);
+        List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking);
         List<Skill> actualSkills = john.getSkills();
 
         // Assert
