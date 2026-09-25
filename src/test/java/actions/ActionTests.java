@@ -1,14 +1,13 @@
 package actions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
-import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.TestSurvivor;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import no.loopacademy.models.survivors.SurvivorType;
 
 public class ActionTests {
     @Test
@@ -50,7 +49,7 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 100;
-        Survivor john = new TestSurvivor("Testy");
+        Survivor john = new Survivor("Testy", SurvivorType.TESTSURVIVOR);
         AttributeWeights drugWeights = new AttributeWeights();
         drugWeights.setStrength(0.1);
         drugWeights.setAgility(0.1);
