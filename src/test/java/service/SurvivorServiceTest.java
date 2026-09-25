@@ -1,18 +1,16 @@
 package service;
 
 
-import no.loopacademy.exceptions.SurvivorNotFoundException;
-import no.loopacademy.models.survivors.CareGiver;
-import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorTypes;
-import no.loopacademy.services.SurvivorService;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+
+import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.services.SurvivorService;
 
 
 public class SurvivorServiceTest {
@@ -28,10 +26,10 @@ public class SurvivorServiceTest {
 
     @Test
     void testCreateSurvivorWithCorrectType_checksCaregiverType_shouldPass() {
-        CareGiver careGiver = new CareGiver("Tester");
+        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
         SurvivorService survivorService = new SurvivorService();
 
-        Survivor survivor = survivorService.create("Tester2", SurvivorTypes.CAREGIVER);
+        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
@@ -39,8 +37,8 @@ public class SurvivorServiceTest {
     @Test
     void testFindAllSurvivors_shouldReturnAllSurvivors_shouldPass() {
         SurvivorService survivorService = new SurvivorService();
-        Survivor survivor1 = survivorService.create("Tester1", SurvivorTypes.CAREGIVER);
-        Survivor survivor2 = survivorService.create("Tester2", SurvivorTypes.CAREGIVER);
+        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
+        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualsurvivors =  survivorService.findAll();
@@ -52,7 +50,7 @@ public class SurvivorServiceTest {
     @Test
     void testFindSurvivorById_passingSurvivorId_shouldReturnSurvivorById_shouldPass() {
         SurvivorService survivorService = new SurvivorService();
-        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorTypes.CAREGIVER);
+        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorType.CAREGIVER);
         expectedSurvivor.setId(1L);
 
         Survivor actualSurvivor = survivorService.findById(1L);
