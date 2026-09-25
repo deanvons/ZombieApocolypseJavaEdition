@@ -1,4 +1,4 @@
-package no.loopacademy.service;
+package no.loopacademy.services;
 
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
