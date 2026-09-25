@@ -1,6 +1,7 @@
 package no.loopacademy.service;
 
 
+import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorTypes;
@@ -37,7 +38,7 @@ public class SurvivorService {
         try{
             return survivors.get(id);
         } catch(NullPointerException e){
-            throw SurvivorNotFoundException;
+            throw new SurvivorNotFoundException("Survivor with id:"+id+" Not Found");
         }
     }
 
