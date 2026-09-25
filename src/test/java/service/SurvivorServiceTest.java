@@ -1,19 +1,17 @@
 package service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import no.loopacademy.exceptions.SurvivorNotFoundException;
-import no.loopacademy.models.skills.Skill;
-import no.loopacademy.models.survivors.CareGiver;
-import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorTypes;
-import no.loopacademy.services.SurvivorService;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.models.skills.Skill;
+import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.services.SurvivorService;
 
 public class SurvivorServiceTest {
     @Test
@@ -28,10 +26,10 @@ public class SurvivorServiceTest {
 
     @Test
     void testCreateSurvivorWithCorrectType_checksCaregiverType_shouldPass() {
-        CareGiver careGiver = new CareGiver("Tester");
+        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
         SurvivorService survivorService = new SurvivorService();
 
-        Survivor survivor = survivorService.create("Tester2", SurvivorTypes.CAREGIVER);
+        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
@@ -39,8 +37,8 @@ public class SurvivorServiceTest {
     @Test
     void testFindAllSurvivors_shouldReturnAllSurvivors_shouldPass() {
         SurvivorService survivorService = new SurvivorService();
-        Survivor survivor1 = survivorService.create("Tester1", SurvivorTypes.CAREGIVER);
-        Survivor survivor2 = survivorService.create("Tester2", SurvivorTypes.CAREGIVER);
+        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
+        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualsurvivors = survivorService.findAll();
@@ -52,7 +50,7 @@ public class SurvivorServiceTest {
     @Test
     void testFindSurvivorById_passingSurvivorId_shouldReturnSurvivorById_shouldPass() {
         SurvivorService survivorService = new SurvivorService();
-        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorTypes.CAREGIVER);
+        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorType.CAREGIVER);
         expectedSurvivor.setId(1L);
 
         Survivor actualSurvivor = survivorService.findById(1L);
@@ -61,10 +59,11 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void survivorService_addSkillToSurvivor_survivorWithNewSkill() {
+    void testAddSkillToSurvivor_survivor_survivorWithNewSkill() {
         SurvivorService survivorService = new SurvivorService();
-        survivorService.create("CareGiver", SurvivorTypes.CAREGIVER);
-        List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.PsychologicalSupport));
+        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        List<Skill> expectedOutput = new ArrayList<>(
+                List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
 
         survivorService.addSkill(1L, Skill.Accuracy);
@@ -74,10 +73,11 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void survivorService_addSkillToSurvivorThatItAlreadyHas_noChangeInSurvivorSkills() {
+    void testAddSkillToSurvivorThatItAlreadyHas_survivorWithSkill_noChangeInSurvivorSkills() {
         SurvivorService survivorService = new SurvivorService();
-        survivorService.create("CareGiver", SurvivorTypes.CAREGIVER);
-        List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.PsychologicalSupport));
+        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        List<Skill> expectedOutput = new ArrayList<>(
+                List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
         survivorService.addSkill(1L, Skill.FieldMedicine);
         List<Skill> actualOutput = survivorService.findById(1L).getSkills();
@@ -86,10 +86,10 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void survivorService_removeSkillFromSurvivor_survivorWithoutSkill() {
+    void testRemoveSkillFromSurvivor_survivorWithSkill_survivorWithoutSkill() {
         SurvivorService survivorService = new SurvivorService();
-        survivorService.create("CareGiver", SurvivorTypes.CAREGIVER);
-        List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine));
+        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
         survivorService.removeSkill(1L, Skill.PsychologicalSupport);
         List<Skill> actualOutput = survivorService.findById(1L).getSkills();

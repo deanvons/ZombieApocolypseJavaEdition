@@ -1,6 +1,5 @@
 package no.loopacademy;
 
-import no.loopacademy.models.survivors.CareGiver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

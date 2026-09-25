@@ -2,9 +2,8 @@ package no.loopacademy.services;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.skills.Skill;
-import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorTypes;
+import no.loopacademy.models.survivors.SurvivorType;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,9 +16,9 @@ public class SurvivorService {
 
     Map<Long, Survivor> survivors = new HashMap<Long, Survivor>();
 
-    public Survivor create(String name, SurvivorTypes type) {
+    public Survivor create(String name, SurvivorType type) {
         Survivor survivor = switch (type) {
-            case CAREGIVER -> new CareGiver(name);
+            case CAREGIVER -> new Survivor(name, type);
             default -> null;
         };
         long id = survivors.size() + 1L;
