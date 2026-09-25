@@ -1,0 +1,10 @@
+# Shell scripts must keep Unix line endings, or they break inside Linux containers (Docker)
+gradlew text eol=lf
+*.sh    text eol=lf
+
+# Windows scripts keep Windows line endings
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary files
+*.jar   binary
