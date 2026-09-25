@@ -5,11 +5,11 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
-name: Java CI with Gradle
+name: CI - Build & Test (pull requests)
 
+# Checks code before it's merged. Pushes to main are handled by cd.yml,
+# which runs the same tests before building, pushing and deploying.
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
