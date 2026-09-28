@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping("/api")
 public class HealthCheckController {
 
   private final JdbcTemplate jdbcTemplate;
@@ -18,19 +18,25 @@ public class HealthCheckController {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  @GetMapping
+  @GetMapping("health")
   public ResponseEntity<Void> getHealthCheck() {
     return ResponseEntity.ok().build();
   }
 
-    @GetMapping("new")
+  
+  @GetMapping("health/new")
   public ResponseEntity<Void> getHealthCheckNew() {
+    return ResponseEntity.ok().build();
+  }
+
+    @GetMapping("checkToken")
+  public ResponseEntity<Void> checkToken() {
     return ResponseEntity.ok().build();
   }
 
   // Runs a trivial query to prove the app can reach and log in to the database.
   // No tables needed: Postgres answers SELECT 1 on its own.
-  @GetMapping("database")
+  @GetMapping("health/database")
   public ResponseEntity<String> getDatabaseHealthCheck() {
     try {
       jdbcTemplate.queryForObject("SELECT 1", Integer.class);
