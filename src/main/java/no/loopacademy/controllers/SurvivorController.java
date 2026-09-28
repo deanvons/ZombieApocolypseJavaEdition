@@ -33,7 +33,7 @@ public class SurvivorController {
         return survivorService.findById(id);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/{id}/skills")
     public void setSurvivorSkillsById(@PathVariable Long id, @RequestBody List<Skill> skills) {
         skills.addAll(survivorService.findById(id).getSkills());
         survivorService.findById(id).setSkills(skills);
@@ -46,7 +46,7 @@ public class SurvivorController {
         survivorService.findById(id).getSkills().remove(skill);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/{id}/items")
     public void setSurvivorsItem(@PathVariable Long id, @RequestBody List<Item> items) {
         items.addAll(survivorService.findById(id).getGear());
         survivorService.findById(id).setGear(items);

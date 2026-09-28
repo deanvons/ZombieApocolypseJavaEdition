@@ -1,70 +1,82 @@
 package no.loopacademy.services;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
+import no.loopacademy.repositories.ActionRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 @Service
 public class ActionService {
 
-    private final List<Action> actions = new ArrayList<>();
+    private final ActionRepository actionRepository;
 
-    public ActionService() {
-        addAction(
+    public ActionService(ActionRepository actionRepository) {
+        this.actionRepository = actionRepository;
+    }
+
+    @PostConstruct
+    void seedActions() {
+        if (actionRepository.count() != 0) {
+            return;
+        }
+
+        actionRepository.saveAll(List.of(
+            action(
                 "Attack",
                 ActionType.Attack,
                 "Deal damage to a threat",
                 "Enemy",
                 weights(0.6, 0.2, 0.0, 0.0, 0.1, 0.1, 0.0)
-        );
+            ),
 
-        addAction(
+            action(
                 "Heal",
                 ActionType.Heal,
                 "Restore health to a survivor",
                 "Survivor",
                 weights(0.0, 0.1, 0.4, 0.4, 0.0, 0.1, 0.0)
-        );
+            ),
 
-        addAction(
+            action(
                 "Scavenge",
                 ActionType.Scavenge,
                 "Find useful supplies",
                 "Location",
                 weights(0.1, 0.4, 0.1, 0.3, 0.0, 0.1, 0.0)
-        );
+            ),
 
-        addAction(
+            action(
                 "Build Shelter",
                 ActionType.Build,
                 "Build a safe shelter",
                 "Location",
                 weights(0.4, 0.1, 0.0, 0.2, 0.1, 0.2, 0.0)
-        );
+            ),
 
-        addAction(
+            action(
                 "Persuade",
                 ActionType.Persuade,
                 "Convince another person",
                 "Person",
                 weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)
-        );
+            )
+        ));
     }
 
-    private void addAction(
+    private Action action(
             String name,
             ActionType type,
             String effect,
             String target,
             AttributeWeights attributeWeights
     ) {
-        Action action = new Action(name, type, effect, target, attributeWeights);
-        action.setId((long) actions.size() + 1);
-        actions.add(action);
+        return new Action(name, type, effect, target, attributeWeights);
     }
 
     private AttributeWeights weights(
@@ -87,14 +99,13 @@ public class ActionService {
         return weights;
     }
 
+    @Transactional(readOnly = true)
     public List<Action> findAll() {
-        return List.copyOf(actions);
+        return actionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Action findById(Long id) {
-        return actions.stream()
-                .filter(action -> action.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+        return actionRepository.findById(id).orElseThrow(()->new ActionNotFoundException("Action not found"));
     }
 }
