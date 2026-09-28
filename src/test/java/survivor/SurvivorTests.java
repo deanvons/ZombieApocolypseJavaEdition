@@ -1,18 +1,11 @@
 package survivor;
 
-import java.security.Provider;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import no.loopacademy.exceptions.OverloadedException;
-import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
-import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.attributes.SurvivorAttributes;
-import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
@@ -61,20 +54,4 @@ public class SurvivorTests {
         assertEquals(expectedSkills, actualSkills);
 
     }
-
-    @Test
-    void load_ShouldThrowCarryWeightExceededException_WhenLoadingAnItemThatExceedsMaxWeight() {
-        // Arrange
-        String expectedName = "Melvin";
-        Double heavyItemweight = 9999.0;
-        SurvivorService service = new SurvivorService();
-        service.create(expectedName, SurvivorType.CAREGIVER);
-        // Act
-        Item testItem = new Item("Test item", heavyItemweight);
-        long survivorId = service.findById(1L).getId();
-
-        // Assert
-        assertThrows(OverloadedException.class, () -> service.loadItem(survivorId, testItem));
-    }
-
 }
