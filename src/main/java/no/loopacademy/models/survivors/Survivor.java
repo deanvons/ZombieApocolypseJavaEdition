@@ -3,26 +3,50 @@ package no.loopacademy.models.survivors;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
+
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 
+@Entity
 public class Survivor {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
+    // Not persisted until Item is mapped as an entity (issue #38)
+    @Transient
     private List<Item> gear = new ArrayList<>();
 
+    @Embedded
     private SurvivorAttributes attributes;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private SurvivorType type;
 
+    protected Survivor() {}
 
     public Survivor(String name, SurvivorType type) {
         this.name = name;
@@ -67,12 +91,14 @@ public class Survivor {
         return effectiveness;
     }
 
-
-
     // Getters and setters
-    public Long getId(){ return id;}
+    public Long getId() { 
+        return id;
+    }
 
-    public void setId(Long id){this.id = id;}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -101,6 +127,7 @@ public class Survivor {
     public SurvivorAttributes getAttributes() {
         return attributes;
     }
+    
     public void setAttributes(SurvivorAttributes attributes) {
         this.attributes = attributes;
     }
@@ -108,9 +135,9 @@ public class Survivor {
     public SurvivorType getType() {
         return type;
     }
+    
     public void setType(SurvivorType type) {
         this.type = type;
     }
-
-
+    
 }
