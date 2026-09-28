@@ -50,7 +50,6 @@ public class HealthCheckController {
           @ApiResponse(responseCode = "200", description = "Database is reachable."),
           @ApiResponse(responseCode = "503", description = "Database is unreachable.")
   })
-  @GetMapping("database")
   public ResponseEntity<String> getDatabaseHealthCheck() {
     try {
       jdbcTemplate.queryForObject("SELECT 1", Integer.class);
