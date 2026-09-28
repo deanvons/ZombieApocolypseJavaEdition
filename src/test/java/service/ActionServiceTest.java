@@ -21,10 +21,6 @@ import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.services.ActionService;
 
-@SpringBootTest(
-        classes = {Main.class}
-)
-@Transactional 
 public class ActionServiceTest {
     ActionService actionService;
     ActionRepository actionRepository;
