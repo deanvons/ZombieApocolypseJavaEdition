@@ -1,8 +1,12 @@
 package no.loopacademy.services;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
+import no.loopacademy.repositories.ActionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,7 +15,8 @@ import java.util.List;
 @Service
 public class ActionService {
 
-    private final List<Action> actions = new ArrayList<>();
+    @Autowired
+    private ActionRepository actionRepository;
 
     public ActionService() {
         addAction(
@@ -63,8 +68,8 @@ public class ActionService {
             AttributeWeights attributeWeights
     ) {
         Action action = new Action(name, type, effect, target, attributeWeights);
-        action.setId((long) actions.size() + 1);
-        actions.add(action);
+        action.setId((long) actionRepository.count() + 1);
+        actionRepository.save(action);
     }
 
     private AttributeWeights weights(
@@ -88,13 +93,10 @@ public class ActionService {
     }
 
     public List<Action> findAll() {
-        return List.copyOf(actions);
+        return actionRepository.findAll();
     }
 
     public Action findById(Long id) {
-        return actions.stream()
-                .filter(action -> action.getId().equals(id))
-                .findFirst()
-                .orElse(null);
+        return actionRepository.findById(id).orElseThrow(()->new ActionNotFoundException("Action not found"));
     }
 }

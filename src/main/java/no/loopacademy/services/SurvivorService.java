@@ -7,6 +7,8 @@ import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.repositories.SurvivorRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,55 +19,42 @@ import java.util.Map;
 @Service
 public class SurvivorService {
 
-    Map<Long, Survivor> survivors = new HashMap<Long, Survivor>();
+   @Autowired
+   private SurvivorRepository survivorRepository;
 
     public Survivor create(String name, SurvivorType type) {
         Survivor survivor = switch (type) {
             case CAREGIVER -> new Survivor(name, type);
             default -> null;
         };
-        long id = survivors.size() + 1L;
-
         assert survivor != null;
+
+        long id = survivorRepository.count()+1;
         survivor.setId(id);
-        survivors.put(id, survivor);
+
+        survivorRepository.save(survivor);
 
         return survivor;
     }
 
     public List<Survivor> findAll() {
-        return List.copyOf(survivors.values());
+        return survivorRepository.findAll();
     }
 
     public Survivor findById(Long id) {
-        Survivor survivor = survivors.get(id);
-
-        if (survivor == null) {
-            throw new SurvivorNotFoundException(
-                    "Survivor with id: " + id + " not found");
-        }
-        return survivor;
+       return survivorRepository.findById(id).orElseThrow(()->new SurvivorNotFoundException("Survivor not found"));
     }
 
     public void addSkill(Long id, Skill skill) {
-        Survivor survivor = findById(id);
-        List<Skill> skills = new ArrayList<>(survivor.getSkills());
-        if (skills.contains(skill)) {
-            return;
-        }
-        skills.add(skill);
-        survivor.setSkills(skills);
+        survivorRepository.getReferenceById(id).getSkills().add(skill);
     }
 
     public void removeSkill(Long id, Skill skill) {
-        Survivor survivor = findById(id);
-        List<Skill> skills = new ArrayList<>(survivor.getSkills());
-        skills.remove(skill);
-        survivor.setSkills(skills);
+        survivorRepository.getReferenceById(id).getSkills().remove(skill);
     }
 
     public void loadItem(Long id, Item item) {
-        Survivor survivor = findById(id);
+        Survivor survivor = survivorRepository.getReferenceById(id);
         double currentLoad = survivor.getGear().stream()
                 .mapToDouble(Item::getWeight)
                 .sum();
@@ -73,15 +62,17 @@ public class SurvivorService {
         if (currentLoad + item.getWeight() > getMaxLoad(survivor)) {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
-        survivor.getGear().add(item);
+        survivorRepository.getReferenceById(id).getGear().add(item);
+
     }
 
     private double getMaxLoad(Survivor survivor) {
-        return 10 + survivor.getAttributes().getStrength() * 3;
+        return 10 + survivorRepository
+                .getReferenceById(survivor.getId()).getAttributes().getStrength() * 3;
     }
 
     public double performAction(Long id, Action action) {
-        Survivor survivor = findById(id);
+        Survivor survivor = survivorRepository.getReferenceById(id);
 
         double strengthContrib = survivor.getAttributes().getStrength() * action.getAttributeWeights().getStrength();
         double agilityContrib = survivor.getAttributes().getAgility() * action.getAttributeWeights().getAgility();
