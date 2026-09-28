@@ -1,18 +1,21 @@
 package survivor;
 
-import no.loopacademy.models.skills.Skill;
-import no.loopacademy.models.survivors.CareGiver;
-import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.exceptions.CarryWeightExceededException;
-import no.loopacademy.models.attributes.SurvivorAttributes;
-import no.loopacademy.models.items.Item;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
+import java.security.Provider;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.services.SurvivorService;
+import org.junit.jupiter.api.Test;
+
+import no.loopacademy.exceptions.CarryWeightExceededException;
+import no.loopacademy.models.attributes.SurvivorAttributes;
+import no.loopacademy.models.items.Item;
+import no.loopacademy.models.skills.Skill;
+import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.models.survivors.SurvivorType;
 
 public class SurvivorTests {
 
@@ -21,7 +24,7 @@ public class SurvivorTests {
         // Arrange
         String expectedName = "Melvin";
         // Act
-        CareGiver c = new CareGiver(expectedName);
+        Survivor c = new Survivor(expectedName, SurvivorType.CAREGIVER);
         String actualName = c.getName();
         // Assert
         assertEquals(expectedName, actualName);
@@ -40,7 +43,7 @@ public class SurvivorTests {
         expectedAttributes.setTrustworthiness(8);
 
         // Act
-        CareGiver john = new CareGiver("John");
+        Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
         SurvivorAttributes actualAttributes = john.getAttributes();
 
         // Assert
@@ -50,8 +53,8 @@ public class SurvivorTests {
     @Test
     void caregiverShouldBeCreatedWithCorrectSkills() {
 
-        CareGiver john = new CareGiver("John");
-        List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport);
+        Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
+        List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking);
         List<Skill> actualSkills = john.getSkills();
 
         // Assert
@@ -64,14 +67,14 @@ public class SurvivorTests {
         // Arrange
         String expectedName = "Melvin";
         Double heavyItemweight = 9999.0;
+        SurvivorService service = new SurvivorService();
+        service.create(expectedName, SurvivorType.CAREGIVER);
         // Act
-        CareGiver c = new CareGiver(expectedName);
         Item testItem = new Item("Test item", heavyItemweight);
+        long survivorId = service.findById(1L).getId();
 
         // Assert
-        assertThrows(CarryWeightExceededException.class, () -> c.load(testItem));
-       
-
+        assertThrows(OverloadedException.class, () -> service.loadItem(survivorId, testItem));
     }
 
 }

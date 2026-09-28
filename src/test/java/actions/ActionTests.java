@@ -1,14 +1,15 @@
 package actions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import no.loopacademy.services.SurvivorService;
+import org.junit.jupiter.api.Test;
+
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
-import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.TestSurvivor;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import no.loopacademy.models.survivors.SurvivorType;
 
 public class ActionTests {
     @Test
@@ -49,8 +50,11 @@ public class ActionTests {
 
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
-        double expectedEffectiveness = 100;
-        Survivor john = new TestSurvivor("Testy");
+        double expectedEffectiveness = 52;
+        String expectedName = "Kevin";
+        SurvivorService service = new SurvivorService();
+        service.create(expectedName, SurvivorType.CAREGIVER);
+
         AttributeWeights drugWeights = new AttributeWeights();
         drugWeights.setStrength(0.1);
         drugWeights.setAgility(0.1);
@@ -61,7 +65,9 @@ public class ActionTests {
         drugWeights.setLeadership(0.4);
         Action drug = new Action("test", ActionType.Fix, "", "", drugWeights);
 
-        double actualEffectiveness = john.performAction(drug);
+        long survivorId = service.findById(1L).getId();
+
+        double actualEffectiveness = service.performAction(survivorId, drug);
 
         assertEquals(expectedEffectiveness,actualEffectiveness);
     }
