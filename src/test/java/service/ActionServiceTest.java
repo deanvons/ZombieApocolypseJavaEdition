@@ -1,29 +1,31 @@
 package service;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.services.ActionService;
 
+public class ActionServiceTest {
+    ActionService actionService;
 
-public class ActionServiceTest{
+    @BeforeEach
+    public void setup() {
+        actionService = new ActionService();
+    }
+
     @Test
     void shouldReturnFiveSampleActions() {
-        ActionService service = new ActionService();
-
-        assertEquals(5, service.findAll().size());
+        assertEquals(5, actionService.findAll().size());
     }
 
     @Test
     void shouldFindActionById() {
-        ActionService service = new ActionService();
-
-        Action action = service.findById(1L);
+        Action action = actionService.findById(1L);
 
         assertEquals("Attack", action.getName());
         assertEquals(ActionType.Attack, action.getType());
@@ -31,8 +33,6 @@ public class ActionServiceTest{
 
     @Test
     void shouldReturnNullForUnknownActionId() {
-        ActionService service = new ActionService();
-
-        assertNull(service.findById(999L));
+        assertNull(actionService.findById(999L));
     }
 }
