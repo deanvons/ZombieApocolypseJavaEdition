@@ -1,6 +1,10 @@
 package no.loopacademy.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.dao.DataAccessException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -8,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Health", description = "Checking health of a user. But also for server")
 @RestController
 @RequestMapping("/api/health")
 public class HealthCheckController {
@@ -30,6 +35,14 @@ public class HealthCheckController {
 
   // Runs a trivial query to prove the app can reach and log in to the database.
   // No tables needed: Postgres answers SELECT 1 on its own.
+  @Operation(
+          summary = "Check database connectivity.",
+          description = "Runs simple query to check if it is alive."
+  )
+  @ApiResponses({
+          @ApiResponse(responseCode = "200", description = "Database is reachable."),
+          @ApiResponse(responseCode = "503", description = "Database is unreachable.")
+  })
   @GetMapping("database")
   public ResponseEntity<String> getDatabaseHealthCheck() {
     try {
