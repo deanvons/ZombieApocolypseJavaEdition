@@ -1,5 +1,6 @@
 package no.loopacademy.controllers;
 
+import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorTypes;
 import no.loopacademy.services.SurvivorService;
@@ -28,6 +29,19 @@ public class SurvivorController {
     @GetMapping("/{id}")
     public Survivor getSurvivorById(@PathVariable Long id) {
         return survivorService.findById(id);
+    }
+
+    @PostMapping("/{id}")
+    public void setSurvivorSkillsById(@PathVariable Long id, @RequestBody List<Skill> skills) {
+        skills.addAll(survivorService.findById(id).getSkills());
+        survivorService.findById(id).setSkills(skills);
+    }
+
+    @DeleteMapping("/{id}/skills/{skill}")
+    public void DeleteSurvivorsSkillBYId(
+            @PathVariable Long id, @PathVariable Skill skill
+    ){
+        survivorService.findById(id).getSkills().remove(skill);
     }
 
 
