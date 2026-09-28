@@ -1,16 +1,56 @@
 package actions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+
+import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.services.SurvivorService;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
-import no.loopacademy.models.survivors.CareGiver;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.TestSurvivor;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import no.loopacademy.models.survivors.SurvivorType;
 
 public class ActionTests {
+    private SurvivorService survivorService;
+    private SurvivorRepository repository;
+
+    @BeforeEach
+    public void setup() {
+        repository = mock(SurvivorRepository.class);
+        Map<Long, Survivor> survivors = new LinkedHashMap<>();
+        AtomicLong nextId = new AtomicLong(1);
+
+        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+            Survivor survivor = invocation.getArgument(0);
+            if (survivor.getId() == null) {
+                survivor.setId(nextId.getAndIncrement());
+            }
+            survivors.put(survivor.getId(), survivor);
+            return survivor;
+        });
+        when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
+        when(repository.findById(any(Long.class)))
+                .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
+        when(repository.getReferenceById(any(Long.class)))
+                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
+
+        survivorService = new SurvivorService(repository);
+    }
+
     @Test
     void shouldCreateActionWithCorrectValues() {
         // Arr
@@ -45,12 +85,12 @@ public class ActionTests {
         assertEquals(expectedAttributeWeights, actualAttributeWeights);
     }
 
-
-
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
-        double expectedEffectiveness = 100;
-        Survivor john = new TestSurvivor("Testy");
+        double expectedEffectiveness = 52;
+        String expectedName = "Kevin";
+        survivorService.create(expectedName, SurvivorType.CAREGIVER);
+
         AttributeWeights drugWeights = new AttributeWeights();
         drugWeights.setStrength(0.1);
         drugWeights.setAgility(0.1);
@@ -61,10 +101,11 @@ public class ActionTests {
         drugWeights.setLeadership(0.4);
         Action drug = new Action("test", ActionType.Fix, "", "", drugWeights);
 
-        double actualEffectiveness = john.performAction(drug);
+        long survivorId = survivorService.findById(1L).getId();
 
-        assertEquals(expectedEffectiveness,actualEffectiveness);
+        double actualEffectiveness = survivorService.performAction(survivorId, drug);
+
+        assertEquals(expectedEffectiveness, actualEffectiveness);
     }
-
 
 }

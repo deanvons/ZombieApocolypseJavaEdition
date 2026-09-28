@@ -1,7 +1,8 @@
 package no.loopacademy.models.attributes;
 
-import java.util.Objects;
+import jakarta.persistence.Embeddable;
 
+@Embeddable
 public class SurvivorAttributes extends GeneralAttributes {
 
 }

@@ -3,28 +3,55 @@ package no.loopacademy.models.survivors;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 
-public abstract class Survivor {
+@Entity
+public class Survivor {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
 
+    @ElementCollection(targetClass = Skill.class)
+    @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
+    @OneToMany(mappedBy = "survivor", cascade = CascadeType.ALL)
     private List<Item> gear = new ArrayList<>();
 
-    SurvivorAttributes attributes;
+    @Embedded
+    private SurvivorAttributes attributes;
 
-    public Survivor(String name) {
-        this.name = name;
+    @Enumerated(EnumType.STRING)
+    private SurvivorType type;
+
+    protected Survivor() {
     }
 
+
+    public Survivor(String name, SurvivorType type) {
+        this.name = name;
+        this.type = type;
+        this.attributes = type.getDefaultAttributes();
+        this.skills = new ArrayList<>(type.getDefaultSkills());
+    }
+    
     public void load(Item item) throws Exception {
         double currentMaxLoadCapacity = getMaxLoad();
         double currentLoad = 0;
@@ -34,7 +61,7 @@ public abstract class Survivor {
         }
 
         if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
-            throw new CarryWeightExceededException("Too much weight");
+            throw new CarryWeightExceededException("I can't carry anymore");
         } else {
             gear.add(item);
         }
@@ -60,6 +87,7 @@ public abstract class Survivor {
 
         return effectiveness;
     }
+
 
 
     // Getters and setters
@@ -90,4 +118,20 @@ public abstract class Survivor {
     public void setGear(List<Item> gear) {
         this.gear = gear;
     }
+
+    public SurvivorAttributes getAttributes() {
+        return attributes;
+    }
+    public void setAttributes(SurvivorAttributes attributes) {
+        this.attributes = attributes;
+    }
+
+    public SurvivorType getType() {
+        return type;
+    }
+    public void setType(SurvivorType type) {
+        this.type = type;
+    }
+
+
 }
