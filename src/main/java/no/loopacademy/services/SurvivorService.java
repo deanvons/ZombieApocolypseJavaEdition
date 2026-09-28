@@ -32,9 +32,6 @@ public class SurvivorService {
         };
         assert survivor != null;
 
-        long id = survivorRepository.count()+1;
-        survivor.setId(id);
-
         survivorRepository.save(survivor);
 
         return survivor;

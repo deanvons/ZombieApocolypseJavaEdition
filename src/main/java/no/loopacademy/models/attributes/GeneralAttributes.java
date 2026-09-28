@@ -1,7 +1,9 @@
 package no.loopacademy.models.attributes;
 
+import jakarta.persistence.MappedSuperclass;
 import java.util.Objects;
 
+@MappedSuperclass
 public class GeneralAttributes {
     // Physical Attributes
     private double strength;       // Ability to carry heavy items, push zombies, or use melee weapons.
