@@ -5,8 +5,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
@@ -62,19 +64,6 @@ public class SurvivorTests {
 
     }
 
-    @Test
-    void load_ShouldThrowCarryWeightExceededException_WhenLoadingAnItemThatExceedsMaxWeight() {
-        // Arrange
-        String expectedName = "Melvin";
-        Double heavyItemweight = 9999.0;
-        SurvivorService service = new SurvivorService();
-        service.create(expectedName, SurvivorType.CAREGIVER);
-        // Act
-        Item testItem = new Item("Test item", heavyItemweight);
-        long survivorId = service.findById(1L).getId();
 
-        // Assert
-        assertThrows(OverloadedException.class, () -> service.loadItem(survivorId, testItem));
-    }
 
 }

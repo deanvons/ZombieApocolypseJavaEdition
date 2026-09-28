@@ -1,10 +1,18 @@
 package items;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,9 +26,26 @@ import no.loopacademy.services.SurvivorService;
 
 
 public class ItemTests {
+    private SurvivorService survivorService;
+
     @BeforeEach
     public void setup() {
-        // Setup objects to use as data
+        SurvivorRepository repository = mock(SurvivorRepository.class);
+        Map<Long, Survivor> survivors = new LinkedHashMap<>();
+        AtomicLong nextId = new AtomicLong(1);
+
+        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+            Survivor survivor = invocation.getArgument(0);
+            if (survivor.getId() == null) {
+                survivor.setId(nextId.getAndIncrement());
+            }
+            survivors.put(survivor.getId(), survivor);
+            return survivor;
+        });
+        when(repository.getReferenceById(any(Long.class))).thenAnswer(invocation ->
+                survivors.get(invocation.getArgument(0)));
+
+        survivorService = new SurvivorService(repository);
     }
 
     @Test
@@ -81,11 +106,10 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
-        Survivor john = service.create("John", SurvivorType.CAREGIVER);
+        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         // Act
-        service.loadItem(john.getId(), tool);
+        survivorService.loadItem(john.getId(), tool);
         // Assert - to check if he has it equipped
         assertEquals(1,  john.getGear().size());
     }
@@ -93,13 +117,12 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
-        Survivor john = service.create("John", SurvivorType.CAREGIVER);
+        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         Weapon weapon = new Weapon("AK-47", 5.0, 10);
         // Act
-        service.loadItem(john.getId(), tool);
-        service.loadItem(john.getId(), weapon);
+        survivorService.loadItem(john.getId(), tool);
+        survivorService.loadItem(john.getId(), weapon);
         // Assert - to check if he has it equipped
         assertEquals(2,  john.getGear().size());
     }
@@ -107,23 +130,21 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
-        Survivor john = service.create("John", SurvivorType.CAREGIVER);
+        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 100.0, 100);
         // Act & assert
-        assertThrows(OverloadedException.class, () -> service.loadItem(john.getId(), tool));
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), tool));
     }
 
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
-        Survivor john = service.create("John", SurvivorType.CAREGIVER);
+        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         Weapon weapon = new Weapon("AK-47", 10.0, 10); // Too heavy
         // Act & assert
-        service.loadItem(john.getId(), tool);
-        assertThrows(OverloadedException.class, () -> service.loadItem(john.getId(), weapon));
+        survivorService.loadItem(john.getId(), tool);
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), weapon));
     }
 
 }

@@ -3,6 +3,7 @@ package no.loopacademy.models.survivors;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
@@ -12,7 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Transient;
+import jakarta.persistence.OneToMany;
 
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
@@ -31,12 +32,11 @@ public class Survivor {
     private String name;
 
     @Column(nullable = false)
-    @ElementCollection
+    @ElementCollection(targetClass = Skill.class)
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
-    // Not persisted until Item is mapped as an entity (issue #38)
-    @Transient
+    @OneToMany(mappedBy = "survivor", cascade = CascadeType.ALL)
     private List<Item> gear = new ArrayList<>();
 
     @Embedded
@@ -46,7 +46,8 @@ public class Survivor {
     @Enumerated(EnumType.STRING)
     private SurvivorType type;
 
-    protected Survivor() {}
+    protected Survivor() {
+    }
 
     public Survivor(String name, SurvivorType type) {
         this.name = name;
