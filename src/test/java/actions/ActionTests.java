@@ -1,7 +1,9 @@
 package actions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
+import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +54,8 @@ public class ActionTests {
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 52;
         String expectedName = "Kevin";
-        SurvivorService service = new SurvivorService();
+        SurvivorRepository repo = mock(SurvivorRepository.class);
+        SurvivorService service = new SurvivorService(repo);
         service.create(expectedName, SurvivorType.CAREGIVER);
 
         AttributeWeights drugWeights = new AttributeWeights();

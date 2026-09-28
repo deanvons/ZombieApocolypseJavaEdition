@@ -1,40 +1,30 @@
 package no.loopacademy.services;
 
-import org.springframework.transaction.annotation.Transactional;
-import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.repositories.SurvivorRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class SurvivorService {
 
-   @Autowired
-   private SurvivorRepository survivorRepository;
+    private final SurvivorRepository survivorRepository;
 
+    public SurvivorService(SurvivorRepository survivorRepository) {
+        this.survivorRepository = survivorRepository;
+    }
 
     @Transactional
     public Survivor create(String name, SurvivorType type) {
-        Survivor survivor = switch (type) {
-            case CAREGIVER -> new Survivor(name, type);
-            default -> null;
-        };
-        assert survivor != null;
-
-        survivorRepository.save(survivor);
-
-        return survivor;
+        return survivorRepository.save(new Survivor(name, type));
     }
 
     @Transactional(readOnly = true)
@@ -49,7 +39,10 @@ public class SurvivorService {
 
     @Transactional
     public void addSkill(Long id, Skill skill) {
-        survivorRepository.getReferenceById(id).getSkills().add(skill);
+        Survivor survivor = survivorRepository.getReferenceById(id);
+        if (!survivor.getSkills().contains(skill)) {
+            survivor.getSkills().add(skill);
+        }
     }
 
     @Transactional
