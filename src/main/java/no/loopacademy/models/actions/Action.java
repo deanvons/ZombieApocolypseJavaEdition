@@ -1,14 +1,31 @@
 package no.loopacademy.models.actions;
 
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import no.loopacademy.models.attributes.AttributeWeights;
 
+@Entity
 public class Action {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+
+    @Enumerated(EnumType.STRING)
     private ActionType type;
     private String effect;
     private String target = "";
-   private  AttributeWeights attributeWeights;
+
+    @Embedded
+    private AttributeWeights attributeWeights;
+
+    protected Action() {
+    }
 
     public Action(String name, ActionType type, String effect, String target, AttributeWeights attributeWeights) {
         this.name = name;
