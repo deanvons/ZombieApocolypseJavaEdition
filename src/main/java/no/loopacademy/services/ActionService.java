@@ -1,7 +1,7 @@
 package no.loopacademy.services;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
-import no.loopacademy.exceptions.SurvivorNotFoundException;
+import org.springframework.transaction.annotation.Transactional;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
@@ -60,6 +60,7 @@ public class ActionService {
         );
     }
 
+    @Transactional
     private void addAction(
             String name,
             ActionType type,
@@ -92,10 +93,12 @@ public class ActionService {
         return weights;
     }
 
+    @Transactional(readOnly = true)
     public List<Action> findAll() {
         return actionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Action findById(Long id) {
         return actionRepository.findById(id).orElseThrow(()->new ActionNotFoundException("Action not found"));
     }

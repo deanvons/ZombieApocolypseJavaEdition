@@ -1,5 +1,6 @@
 package no.loopacademy.services;
 
+import org.springframework.transaction.annotation.Transactional;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.actions.Action;
@@ -22,6 +23,8 @@ public class SurvivorService {
    @Autowired
    private SurvivorRepository survivorRepository;
 
+
+    @Transactional
     public Survivor create(String name, SurvivorType type) {
         Survivor survivor = switch (type) {
             case CAREGIVER -> new Survivor(name, type);
@@ -37,22 +40,27 @@ public class SurvivorService {
         return survivor;
     }
 
+    @Transactional(readOnly = true)
     public List<Survivor> findAll() {
         return survivorRepository.findAll();
     }
 
+    @Transactional
     public Survivor findById(Long id) {
        return survivorRepository.findById(id).orElseThrow(()->new SurvivorNotFoundException("Survivor not found"));
     }
 
+    @Transactional
     public void addSkill(Long id, Skill skill) {
         survivorRepository.getReferenceById(id).getSkills().add(skill);
     }
 
+    @Transactional
     public void removeSkill(Long id, Skill skill) {
         survivorRepository.getReferenceById(id).getSkills().remove(skill);
     }
 
+    @Transactional
     public void loadItem(Long id, Item item) {
         Survivor survivor = survivorRepository.getReferenceById(id);
         double currentLoad = survivor.getGear().stream()
@@ -66,11 +74,13 @@ public class SurvivorService {
 
     }
 
+    @Transactional(readOnly = true)
     private double getMaxLoad(Survivor survivor) {
         return 10 + survivorRepository
                 .getReferenceById(survivor.getId()).getAttributes().getStrength() * 3;
     }
 
+    @Transactional(readOnly = true)
     public double performAction(Long id, Action action) {
         Survivor survivor = survivorRepository.getReferenceById(id);
 
