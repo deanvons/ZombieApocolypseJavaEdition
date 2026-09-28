@@ -4,7 +4,7 @@ import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorTypes;
+import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +24,7 @@ public class SurvivorController {
     }
 
     @PostMapping
-    public Survivor createSurvivor(@RequestBody String name, @RequestBody SurvivorTypes survivorType) {
+    public Survivor createSurvivor(@RequestBody String name, @RequestBody SurvivorType survivorType) {
         return survivorService.create(name, survivorType);
     }
 
