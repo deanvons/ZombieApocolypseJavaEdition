@@ -3,6 +3,7 @@ package no.loopacademy.models.survivors;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -11,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
@@ -30,6 +32,7 @@ public class Survivor {
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
+    @OneToMany(mappedBy = "survivor", cascade = CascadeType.ALL)
     private List<Item> gear = new ArrayList<>();
 
     @Embedded

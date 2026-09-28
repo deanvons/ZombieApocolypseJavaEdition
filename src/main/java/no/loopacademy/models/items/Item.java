@@ -7,6 +7,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import no.loopacademy.models.survivors.Survivor;
 import jakarta.persistence.GenerationType;
 
 @Entity 
@@ -17,6 +20,9 @@ public class Item {
     private Long id;
     String name;
     double weight;
+    @ManyToOne
+    @JoinColumn(name = "survivor_id")
+    Survivor survivor;
 
     public Item() {
     }

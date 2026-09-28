@@ -10,7 +10,10 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import jakarta.transaction.Transactional;
+import no.loopacademy.Main;
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
@@ -18,6 +21,10 @@ import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.services.ActionService;
 
+@SpringBootTest(
+        classes = {Main.class}
+)
+@Transactional 
 public class ActionServiceTest {
     ActionService actionService;
     ActionRepository actionRepository;
