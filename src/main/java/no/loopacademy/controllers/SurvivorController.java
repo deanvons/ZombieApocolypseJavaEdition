@@ -1,5 +1,7 @@
 package no.loopacademy.controllers;
 
+import no.loopacademy.models.actions.Action;
+import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorTypes;
@@ -44,6 +46,19 @@ public class SurvivorController {
         survivorService.findById(id).getSkills().remove(skill);
     }
 
+    @PostMapping("/{id}")
+    public void setSurvivorsItem(@PathVariable Long id, @RequestBody List<Item> items) {
+        items.addAll(survivorService.findById(id).getGear());
+        survivorService.findById(id).setGear(items);
+    }
 
+    @PostMapping("/{id}/{actionId}")
+    public void performAnActionByIdGetsEffectiveness(@PathVariable Long id, @PathVariable Integer actionId) {
+        //TODO
+        //ActionService in needed to accsess action with corresponding id, but not part of this ticket.
+        //this is tempory solution untill we have that
+        Action temporaryAction = null;
+        survivorService.findById(id).performAction(temporaryAction);
+    }
     
 }
