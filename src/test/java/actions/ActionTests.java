@@ -37,7 +37,6 @@ public class ActionTests {
     public void setup() {
         repository = mock(SurvivorRepository.class);
         actionRepository = mock(ActionRepository.class);
-
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
 
