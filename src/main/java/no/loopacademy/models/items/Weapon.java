@@ -2,8 +2,16 @@ package no.loopacademy.models.items;
 
 import java.util.Objects;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity 
+@DiscriminatorValue("weapon")
 public class Weapon extends Item {
     int damage;
+
+    public Weapon() {
+    }
 
     public Weapon(String name, Double weight, int damage) {
         super(name, weight);

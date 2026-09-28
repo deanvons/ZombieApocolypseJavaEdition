@@ -2,9 +2,24 @@ package no.loopacademy.models.items;
 
 import java.util.Objects;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.GenerationType;
+
+@Entity 
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class Item {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     String name;
     double weight;
+
+    public Item() {
+    }
 
     public Item(String name, Double weight) {
         this.name = name;
