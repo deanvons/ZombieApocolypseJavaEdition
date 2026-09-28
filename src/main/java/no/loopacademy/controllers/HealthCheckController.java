@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Health", description = "Checking health of a user. But also for server")
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping("/api")
 public class HealthCheckController {
 
   private final JdbcTemplate jdbcTemplate;
@@ -23,18 +23,25 @@ public class HealthCheckController {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  @GetMapping
+  @GetMapping("health")
   public ResponseEntity<Void> getHealthCheck() {
     return ResponseEntity.ok().build();
   }
 
-    @GetMapping("new")
+  
+  @GetMapping("health/new")
   public ResponseEntity<Void> getHealthCheckNew() {
+    return ResponseEntity.ok().build();
+  }
+
+    @GetMapping("checkToken")
+  public ResponseEntity<Void> checkToken() {
     return ResponseEntity.ok().build();
   }
 
   // Runs a trivial query to prove the app can reach and log in to the database.
   // No tables needed: Postgres answers SELECT 1 on its own.
+  @GetMapping("health/database")
   @Operation(
           summary = "Check database connectivity.",
           description = "Runs simple query to check if it is alive."
