@@ -14,8 +14,8 @@ import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.items.Weapon;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
-
 
 public class ItemTests {
     @BeforeEach
@@ -29,7 +29,7 @@ public class ItemTests {
         String expectedName = "Spanner";
         double expectedWeight = 10;
         int expectedDurability = 100;
-        Tool tool = new Tool(expectedName,expectedWeight,expectedDurability);
+        Tool tool = new Tool(expectedName, expectedWeight, expectedDurability);
 
         // Act
         String actualName = tool.getName();
@@ -37,9 +37,9 @@ public class ItemTests {
         int actualDurability = tool.getDurability();
 
         // Assert
-        assertEquals(expectedName,actualName);
-        assertEquals(expectedWeight,actualWeight);
-        assertEquals(expectedDurability,actualDurability);
+        assertEquals(expectedName, actualName);
+        assertEquals(expectedWeight, actualWeight);
+        assertEquals(expectedDurability, actualDurability);
     }
 
     @Test
@@ -49,7 +49,7 @@ public class ItemTests {
         double expectedWeight = 5;
         int expectedDamage = 10;
 
-        Weapon w = new Weapon(expectedName,expectedWeight,expectedDamage);
+        Weapon w = new Weapon(expectedName, expectedWeight, expectedDamage);
 
         // Act
         String actualName = w.getName();
@@ -57,9 +57,9 @@ public class ItemTests {
         int actualDamage = w.getDamage();
 
         // Assert
-        assertEquals(expectedName,actualName);
-        assertEquals(expectedWeight,actualWeight);
-        assertEquals(expectedDamage,actualDamage);
+        assertEquals(expectedName, actualName);
+        assertEquals(expectedWeight, actualWeight);
+        assertEquals(expectedDamage, actualDamage);
     }
 
     @Test
@@ -75,25 +75,25 @@ public class ItemTests {
         List<Item> actualItems = john.getGear();
 
         // Assert
-        assertEquals(expectedItems,actualItems);
+        assertEquals(expectedItems, actualItems);
     }
 
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
+        SurvivorService service = new SurvivorService(new ActionService());
         Survivor john = service.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         // Act
         service.loadItem(john.getId(), tool);
         // Assert - to check if he has it equipped
-        assertEquals(1,  john.getGear().size());
+        assertEquals(1, john.getGear().size());
     }
 
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
+        SurvivorService service = new SurvivorService(new ActionService());
         Survivor john = service.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         Weapon weapon = new Weapon("AK-47", 5.0, 10);
@@ -101,13 +101,13 @@ public class ItemTests {
         service.loadItem(john.getId(), tool);
         service.loadItem(john.getId(), weapon);
         // Assert - to check if he has it equipped
-        assertEquals(2,  john.getGear().size());
+        assertEquals(2, john.getGear().size());
     }
 
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
+        SurvivorService service = new SurvivorService(new ActionService());
         Survivor john = service.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 100.0, 100);
         // Act & assert
@@ -117,7 +117,7 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        SurvivorService service = new SurvivorService();
+        SurvivorService service = new SurvivorService(new ActionService());
         Survivor john = service.create("John", SurvivorType.CAREGIVER);
         Tool tool = new Tool("Spanner", 10.0, 100);
         Weapon weapon = new Weapon("AK-47", 10.0, 10); // Too heavy

@@ -15,6 +15,7 @@ import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 
 public class SurvivorServiceTest {
@@ -22,7 +23,7 @@ public class SurvivorServiceTest {
 
     @BeforeEach
     public void setup() {
-        survivorService = new SurvivorService();
+        survivorService = new SurvivorService(new ActionService());
     }
 
     @Test

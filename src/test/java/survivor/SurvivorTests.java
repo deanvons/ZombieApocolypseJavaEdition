@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,7 @@ public class SurvivorTests {
         // Arrange
         String expectedName = "Melvin";
         Double heavyItemweight = 9999.0;
-        SurvivorService service = new SurvivorService();
+        SurvivorService service = new SurvivorService(new ActionService());
         service.create(expectedName, SurvivorType.CAREGIVER);
         // Act
         Item testItem = new Item("Test item", heavyItemweight);

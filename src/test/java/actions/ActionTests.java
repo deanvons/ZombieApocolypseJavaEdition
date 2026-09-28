@@ -2,6 +2,7 @@ package actions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
@@ -46,31 +47,19 @@ public class ActionTests {
         assertEquals(expectedAttributeWeights, actualAttributeWeights);
     }
 
-
-
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
-        double expectedEffectiveness = 52;
+        double expectedEffectiveness = 29;
         String expectedName = "Kevin";
-        SurvivorService service = new SurvivorService();
+        ActionService actionService = new ActionService();
+        SurvivorService service = new SurvivorService(actionService);
         service.create(expectedName, SurvivorType.CAREGIVER);
-
-        AttributeWeights drugWeights = new AttributeWeights();
-        drugWeights.setStrength(0.1);
-        drugWeights.setAgility(0.1);
-        drugWeights.setTrustworthiness(0.1);
-        drugWeights.setIntelligence(0.1);
-        drugWeights.setCourage(0.1);
-        drugWeights.setEndurance(0.1);
-        drugWeights.setLeadership(0.4);
-        Action drug = new Action("test", ActionType.Fix, "", "", drugWeights);
-
         long survivorId = service.findById(1L).getId();
+        long actionId = actionService.findById(1L).getId(); // Attack type action
 
-        double actualEffectiveness = service.performAction(survivorId, drug);
+        double actualEffectiveness = service.performAction(survivorId, actionId).score();
 
-        assertEquals(expectedEffectiveness,actualEffectiveness);
+        assertEquals(expectedEffectiveness, actualEffectiveness);
     }
-
 
 }
