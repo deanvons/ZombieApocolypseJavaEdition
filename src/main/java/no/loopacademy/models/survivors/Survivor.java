@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
@@ -26,8 +28,10 @@ public class Survivor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     @ElementCollection(targetClass = Skill.class)
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
@@ -38,12 +42,12 @@ public class Survivor {
     @Embedded
     private SurvivorAttributes attributes;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SurvivorType type;
 
     protected Survivor() {
     }
-
 
     public Survivor(String name, SurvivorType type) {
         this.name = name;
@@ -88,12 +92,14 @@ public class Survivor {
         return effectiveness;
     }
 
-
-
     // Getters and setters
-    public Long getId(){ return id;}
+    public Long getId() { 
+        return id;
+    }
 
-    public void setId(Long id){this.id = id;}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -122,6 +128,7 @@ public class Survivor {
     public SurvivorAttributes getAttributes() {
         return attributes;
     }
+    
     public void setAttributes(SurvivorAttributes attributes) {
         this.attributes = attributes;
     }
@@ -129,9 +136,9 @@ public class Survivor {
     public SurvivorType getType() {
         return type;
     }
+    
     public void setType(SurvivorType type) {
         this.type = type;
     }
-
-
+    
 }
