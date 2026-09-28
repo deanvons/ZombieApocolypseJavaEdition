@@ -2,8 +2,16 @@ package no.loopacademy.models.items;
 
 import java.util.Objects;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("tool")
 public class Tool extends Item {
     int durability;
+
+    public Tool() {
+    }
 
     public Tool(String name, Double weight, Integer durability) {
         super(name, weight);
