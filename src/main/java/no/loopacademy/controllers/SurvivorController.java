@@ -23,9 +23,7 @@ import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
-
 @RestController
 @RequestMapping("/api/survivors")
 public class SurvivorController {
@@ -63,7 +61,6 @@ public class SurvivorController {
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
     }
 
-    // One skill per request, e.g. {"skill": "Cooking"}
     @PostMapping("/{id}/skills")
     public ResponseEntity<SurvivorResponse> addSkill(@PathVariable Long id, @Valid @RequestBody SkillAddRequest request) {
         survivorService.addSkill(id, request.skill());

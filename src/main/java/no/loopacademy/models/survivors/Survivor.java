@@ -13,8 +13,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-import no.loopacademy.exceptions.CarryWeightExceededException;
+
+import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Item;
@@ -35,7 +37,8 @@ public class Survivor {
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
-    @OneToMany(mappedBy = "survivor", cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "survivor_id")
     private List<Item> gear = new ArrayList<>();
 
     @Embedded
@@ -55,7 +58,7 @@ public class Survivor {
         this.skills = new ArrayList<>(type.getDefaultSkills());
     }
 
-    public void load(Item item) throws Exception {
+    public void load(Item item) {
         double currentMaxLoadCapacity = getMaxLoad();
         double currentLoad = 0;
 
@@ -64,7 +67,7 @@ public class Survivor {
         }
 
         if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
-            throw new CarryWeightExceededException("I can't carry anymore");
+            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         } else {
             gear.add(item);
         }
