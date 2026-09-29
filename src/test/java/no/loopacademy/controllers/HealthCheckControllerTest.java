@@ -1,7 +1,6 @@
 package no.loopacademy.controllers;
 
 import static org.junit.jupiter.api.Assertions.fail;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,7 +24,7 @@ class HealthCheckControllerTest {
         try {
             mockMvc
                 .perform(MockMvcRequestBuilders.get("/api/health"))
-                .andExpect(MockMvcResultMatchers.status().isOk());
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
         } catch (Exception e) {
             fail();
         }

@@ -20,10 +20,9 @@ import no.loopacademy.dtos.response.ActionResultResponse;
 import no.loopacademy.dtos.response.SurvivorResponse;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
-import no.loopacademy.models.actions.Action;
+import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 
 @RestController
@@ -31,18 +30,15 @@ import no.loopacademy.services.SurvivorService;
 public class SurvivorController {
 
     private final SurvivorService survivorService;
-    private final ActionService actionService;
     private final SurvivorMapper survivorMapper;
     private final ItemMapper itemMapper;
 
     public SurvivorController(
-        SurvivorService survivorService, 
-        ActionService actionService,
-        SurvivorMapper survivorMapper, 
+        SurvivorService survivorService,
+        SurvivorMapper survivorMapper,
         ItemMapper itemMapper
     ) {
         this.survivorService = survivorService;
-        this.actionService = actionService;
         this.survivorMapper = survivorMapper;
         this.itemMapper = itemMapper;
     }
@@ -87,9 +83,8 @@ public class SurvivorController {
 
     @PostMapping("/{id}/actions/{actionId}")
     public ResponseEntity<ActionResultResponse> performAction(@PathVariable Long id, @PathVariable Long actionId) {
-        Action action = actionService.findById(actionId);
-        double effectiveness = survivorService.performAction(id, action);
-        return ResponseEntity.ok(new ActionResultResponse(id, actionId, effectiveness));
+        ActionResult result = survivorService.performAction(id, actionId);
+        return ResponseEntity.ok(new ActionResultResponse(id, actionId, result.score()));
     }
 
 }

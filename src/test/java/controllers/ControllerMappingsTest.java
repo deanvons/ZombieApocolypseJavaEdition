@@ -4,7 +4,6 @@ import no.loopacademy.controllers.HealthCheckController;
 import no.loopacademy.controllers.SurvivorController;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
-import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,9 +22,6 @@ class ControllerMappingsTest {
 
     @MockitoBean
     private SurvivorService survivorService;
-
-    @MockitoBean
-    private ActionService actionService;
 
     @MockitoBean
     private SurvivorMapper survivorMapper;

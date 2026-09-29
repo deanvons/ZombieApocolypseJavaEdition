@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -26,8 +27,10 @@ public class Survivor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
     @ElementCollection(targetClass = Skill.class)
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
@@ -38,12 +41,12 @@ public class Survivor {
     @Embedded
     private SurvivorAttributes attributes;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private SurvivorType type;
 
     protected Survivor() {
     }
-
 
     public Survivor(String name, SurvivorType type) {
         this.name = name;
@@ -51,7 +54,7 @@ public class Survivor {
         this.attributes = type.getDefaultAttributes();
         this.skills = new ArrayList<>(type.getDefaultSkills());
     }
-    
+
     public void load(Item item) throws Exception {
         double currentMaxLoadCapacity = getMaxLoad();
         double currentLoad = 0;
@@ -83,17 +86,20 @@ public class Survivor {
         double enduranceContrib = attributes.getEndurance() * action.getAttributeWeights().getEndurance();
         double leadContrib = attributes.getLeadership() * action.getAttributeWeights().getLeadership();
 
-        effectiveness += (strengthContrib + agilityContrib + trustContrib + intelContrib + courContrib + enduranceContrib + leadContrib) * 10;
+        effectiveness += (strengthContrib + agilityContrib + trustContrib + intelContrib + courContrib
+                + enduranceContrib + leadContrib) * 10;
 
         return effectiveness;
     }
 
-
-
     // Getters and setters
-    public Long getId(){ return id;}
+    public Long getId() {
+        return id;
+    }
 
-    public void setId(Long id){this.id = id;}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;
@@ -122,6 +128,7 @@ public class Survivor {
     public SurvivorAttributes getAttributes() {
         return attributes;
     }
+
     public void setAttributes(SurvivorAttributes attributes) {
         this.attributes = attributes;
     }
@@ -129,9 +136,9 @@ public class Survivor {
     public SurvivorType getType() {
         return type;
     }
+
     public void setType(SurvivorType type) {
         this.type = type;
     }
-
 
 }
