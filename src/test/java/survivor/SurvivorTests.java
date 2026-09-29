@@ -1,20 +1,11 @@
 package survivor;
 
-import java.security.Provider;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-
-import no.loopacademy.exceptions.OverloadedException;
-import no.loopacademy.repositories.SurvivorRepository;
-import no.loopacademy.services.SurvivorService;
 import org.junit.jupiter.api.Test;
 
-import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.attributes.SurvivorAttributes;
-import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
@@ -63,7 +54,4 @@ public class SurvivorTests {
         assertEquals(expectedSkills, actualSkills);
 
     }
-
-
-
 }

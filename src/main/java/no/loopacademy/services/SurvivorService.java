@@ -3,11 +3,14 @@ package no.loopacademy.services;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
+import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +20,11 @@ import java.util.List;
 public class SurvivorService {
 
     private final SurvivorRepository survivorRepository;
+    private final ActionRepository actionRepository;
 
-    public SurvivorService(SurvivorRepository survivorRepository) {
+    public SurvivorService(SurvivorRepository survivorRepository, ActionRepository actionRepository) {
         this.survivorRepository = survivorRepository;
+        this.actionRepository = actionRepository;
     }
 
     @Transactional
@@ -29,12 +34,23 @@ public class SurvivorService {
 
     @Transactional(readOnly = true)
     public List<Survivor> findAll() {
-        return survivorRepository.findAll();
+        List<Survivor> survivors = survivorRepository.findAll();
+        survivors.forEach(this::initializeCollections);
+        return survivors;
     }
 
     @Transactional
     public Survivor findById(Long id) {
-       return survivorRepository.findById(id).orElseThrow(()->new SurvivorNotFoundException("Survivor not found"));
+        Survivor survivor = survivorRepository.findById(id).orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        initializeCollections(survivor);
+        return survivor;
+    }
+
+    // open-in-view is off, so lazy collections must be loaded before the transaction ends,
+    // otherwise mapping to a DTO in the controller throws LazyInitializationException
+    private void initializeCollections(Survivor survivor) {
+        Hibernate.initialize(survivor.getSkills());
+        Hibernate.initialize(survivor.getGear());
     }
 
     @Transactional
@@ -71,20 +87,26 @@ public class SurvivorService {
     }
 
     @Transactional(readOnly = true)
-    public double performAction(Long id, Action action) {
+    public ActionResult performAction(Long id, Long actionId) {
         Survivor survivor = survivorRepository.getReferenceById(id);
+        Action action = actionRepository.getReferenceById(actionId);
+        double effectiveness = 0.0;
 
         double strengthContrib = survivor.getAttributes().getStrength() * action.getAttributeWeights().getStrength();
         double agilityContrib = survivor.getAttributes().getAgility() * action.getAttributeWeights().getAgility();
-        double trustContrib = survivor.getAttributes().getTrustworthiness() * action.getAttributeWeights().getTrustworthiness();
-        double intelligenceContrib = survivor.getAttributes().getIntelligence() * action.getAttributeWeights().getIntelligence();
+        double trustContrib = survivor.getAttributes().getTrustworthiness()
+                * action.getAttributeWeights().getTrustworthiness();
+        double intelligenceContrib = survivor.getAttributes().getIntelligence()
+                * action.getAttributeWeights().getIntelligence();
         double courageContrib = survivor.getAttributes().getCourage() * action.getAttributeWeights().getCourage();
         double enduranceContrib = survivor.getAttributes().getEndurance() * action.getAttributeWeights().getEndurance();
-        double leadershipContrib = survivor.getAttributes().getLeadership() * action.getAttributeWeights().getLeadership();
+        double leadershipContrib = survivor.getAttributes().getLeadership()
+                * action.getAttributeWeights().getLeadership();
 
-        return (strengthContrib + agilityContrib + trustContrib + intelligenceContrib
+        effectiveness = (strengthContrib + agilityContrib + trustContrib + intelligenceContrib
                 + courageContrib + enduranceContrib + leadershipContrib) * 10;
 
+        return new ActionResult(survivor, action, effectiveness);
     }
 
 }

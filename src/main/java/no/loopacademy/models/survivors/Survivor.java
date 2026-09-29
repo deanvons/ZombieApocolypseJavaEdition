@@ -14,7 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-
 import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
@@ -55,7 +54,7 @@ public class Survivor {
         this.attributes = type.getDefaultAttributes();
         this.skills = new ArrayList<>(type.getDefaultSkills());
     }
-    
+
     public void load(Item item) throws Exception {
         double currentMaxLoadCapacity = getMaxLoad();
         double currentLoad = 0;
@@ -87,13 +86,14 @@ public class Survivor {
         double enduranceContrib = attributes.getEndurance() * action.getAttributeWeights().getEndurance();
         double leadContrib = attributes.getLeadership() * action.getAttributeWeights().getLeadership();
 
-        effectiveness += (strengthContrib + agilityContrib + trustContrib + intelContrib + courContrib + enduranceContrib + leadContrib) * 10;
+        effectiveness += (strengthContrib + agilityContrib + trustContrib + intelContrib + courContrib
+                + enduranceContrib + leadContrib) * 10;
 
         return effectiveness;
     }
 
     // Getters and setters
-    public Long getId() { 
+    public Long getId() {
         return id;
     }
 
@@ -128,7 +128,7 @@ public class Survivor {
     public SurvivorAttributes getAttributes() {
         return attributes;
     }
-    
+
     public void setAttributes(SurvivorAttributes attributes) {
         this.attributes = attributes;
     }
@@ -136,9 +136,9 @@ public class Survivor {
     public SurvivorType getType() {
         return type;
     }
-    
+
     public void setType(SurvivorType type) {
         this.type = type;
     }
-    
+
 }

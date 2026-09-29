@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,14 @@ import no.loopacademy.services.SurvivorService;
 public class SurvivorServiceTest {
     private SurvivorService survivorService;
     private SurvivorRepository repository;
+    private ActionRepository actionRepository;
 
     @BeforeEach
     public void setup() {
         repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
+        actionRepository = mock(ActionRepository.class);
 
         when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
@@ -44,14 +47,12 @@ public class SurvivorServiceTest {
             return survivor;
         });
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
-        when(repository.findById(any(Long.class))).thenAnswer(invocation ->
-                Optional.ofNullable(survivors.get(invocation.getArgument(0)))
-        );
-        when(repository.getReferenceById(any(Long.class))).thenAnswer(invocation ->
-                survivors.get(invocation.getArgument(0))
-        );
+        when(repository.findById(any(Long.class)))
+                .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
+        when(repository.getReferenceById(any(Long.class)))
+                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
-        survivorService = new SurvivorService(repository);
+        survivorService = new SurvivorService(repository, actionRepository);
     }
 
     @Test

@@ -10,10 +10,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-import jakarta.transaction.Transactional;
-import no.loopacademy.Main;
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
@@ -34,8 +31,7 @@ public class ActionServiceTest {
                 action(2L, "Heal", ActionType.Heal),
                 action(3L, "Scavenge", ActionType.Scavenge),
                 action(4L, "Build Shelter", ActionType.Build),
-                action(5L, "Persuade", ActionType.Persuade)
-        );
+                action(5L, "Persuade", ActionType.Persuade));
 
         when(actionRepository.findAll()).thenReturn(actions);
         when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
