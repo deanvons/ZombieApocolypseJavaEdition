@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import no.loopacademy.exceptions.BusinessRuleException;
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.ResourceNotFoundException;
 
 /**
@@ -17,7 +18,8 @@ import no.loopacademy.exceptions.ResourceNotFoundException;
  * Picked up automatically by Spring; no need to call or import it.
  *   ResourceNotFoundException        → 404
  *   MethodArgumentNotValidException  → 400 (@Valid failures)
- *   BusinessRuleException            → 400  
+ *   BusinessRuleException            → 400
+ *   ResourceConflictException        → 409
  */
 @RestControllerAdvice 
 public class GlobalExceptionHandler {
@@ -69,5 +71,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse(400, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
+    }
+
+    /**
+     * Handles ResourceConflictException thrown by the service layer when creating something that already exists.
+     * Returns 409 CONFLICT response, and the error message from the exception.
+     * @param e exception to handle
+     * @return ResponseEntity(status, response)
+     */
+    @ExceptionHandler(ResourceConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ResourceConflictException e) {
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(409, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
     }
 }
