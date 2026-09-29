@@ -5,6 +5,7 @@ import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,9 @@ public class SurvivorController {
 
     @Autowired
     private SurvivorService survivorService;
+
+    @Autowired
+    private ActionService actionService;
 
     @GetMapping
     public List<Survivor> getSurvivors() {
@@ -53,12 +57,11 @@ public class SurvivorController {
     }
 
     @PostMapping("/{id}/{actionId}")
-    public void performAnActionByIdGetsEffectiveness(@PathVariable Long id, @PathVariable Integer actionId) {
-        //TODO
-        //ActionService in needed to accsess action with corresponding id, but not part of this ticket.
-        //this is tempory solution untill we have that
-        Action temporaryAction = null;
-        survivorService.findById(id).performAction(temporaryAction);
+    public double performAnActionByIdGetsEffectiveness(@PathVariable Long id, @PathVariable Long actionId) {
+       
+        Action actionToPerform = actionService.findById(actionId);
+        Survivor survivor = survivorService.findById(id);
+        double effectiveness = survivor.performAction(actionToPerform);
+        return effectiveness;
     }
-    
 }
