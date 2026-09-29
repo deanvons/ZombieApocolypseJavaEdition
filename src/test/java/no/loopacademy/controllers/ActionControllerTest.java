@@ -23,7 +23,7 @@ import no.loopacademy.services.ActionService;
 @WebMvcTest(ActionController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(ActionMapperImpl.class)   // real MapStruct mapper, so the JSON shape is the real one
-public class ActionControllerTest {
+class ActionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
