@@ -1,7 +1,10 @@
 package controllers;
 
+import no.loopacademy.controllers.ActionController;
 import no.loopacademy.controllers.HealthCheckController;
+import no.loopacademy.controllers.SkillController;
 import no.loopacademy.controllers.SurvivorController;
+import no.loopacademy.mappers.ActionMapper;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.services.ActionService;
@@ -17,7 +20,9 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration(classes = Main.class)
 @WebMvcTest(controllers = {
         HealthCheckController.class,
-        SurvivorController.class
+        SurvivorController.class,
+        SkillController.class,
+        ActionController.class,
 })
 class ControllerMappingsTest {
 
@@ -29,6 +34,9 @@ class ControllerMappingsTest {
 
     @MockitoBean
     private ItemMapper itemMapper;
+
+    @MockitoBean 
+    private ActionMapper actionMapper;
 
     @MockitoBean
     private ActionService actionService;
