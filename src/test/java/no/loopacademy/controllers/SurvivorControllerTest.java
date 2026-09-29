@@ -185,7 +185,4 @@ class SurvivorControllerTest {
     private SurvivorResponse response(Long id, String name, String type) {
         return new SurvivorResponse(id, name, type, List.of(), List.of());
     }
-    
-    //Currently only test get methods.
-    //TODO: Create tests for POST/PUT and DELETE requests
 }
