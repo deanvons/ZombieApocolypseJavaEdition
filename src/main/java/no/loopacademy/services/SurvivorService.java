@@ -1,6 +1,11 @@
 package no.loopacademy.services;
 
-import no.loopacademy.exceptions.OverloadedException;
+import java.util.List;
+
+import org.hibernate.Hibernate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
@@ -10,11 +15,6 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
-import org.hibernate.Hibernate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class SurvivorService {
@@ -68,22 +68,7 @@ public class SurvivorService {
 
     @Transactional
     public void loadItem(Long id, Item item) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
-        double currentLoad = survivor.getGear().stream()
-                .mapToDouble(Item::getWeight)
-                .sum();
-
-        if (currentLoad + item.getWeight() > getMaxLoad(survivor)) {
-            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
-        }
-        survivorRepository.getReferenceById(id).getGear().add(item);
-
-    }
-
-    @Transactional(readOnly = true)
-    private double getMaxLoad(Survivor survivor) {
-        return 10 + survivorRepository
-                .getReferenceById(survivor.getId()).getAttributes().getStrength() * 3;
+        survivorRepository.getReferenceById(id).load(item);
     }
 
     @Transactional(readOnly = true)

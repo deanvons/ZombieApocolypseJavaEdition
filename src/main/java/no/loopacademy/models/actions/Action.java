@@ -1,5 +1,6 @@
 package no.loopacademy.models.actions;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +15,7 @@ public class Action {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(unique = true)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -35,9 +37,13 @@ public class Action {
         this.attributeWeights = attributeWeights;
     }
 
-    public Long getId() {return id;}
+    public Long getId() {
+        return id;
+    }
 
-    public void setId(Long id){this.id = id;}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;

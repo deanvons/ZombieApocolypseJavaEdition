@@ -1,6 +1,6 @@
 # Class Diagram
 
-The domain model in `no.loopacademy.models`. `UserProfile`, `AuditEntry` and `AuditAction` are **proposed** and not in the code yet, and so are `Survivor.owner` and `Survivor.isOwnedBy()`. Getters, setters, `equals` and `hashCode` are left out.
+The domain model in `no.loopacademy.models`. `AuditEntry` and `AuditAction` are **proposed** and not in the code yet. Getters, setters, `equals` and `hashCode` are left out.
 
 ```mermaid
 ---
@@ -38,8 +38,11 @@ classDiagram
         -String keycloakId
         -String displayName
         -Instant createdAt
+        -Survivor survivor
+        +hasSurvivor() boolean
+        +owns(Survivor other) boolean
     }
-    note for UserProfile "Proposed. keycloakId = the JWT 'sub' claim (unique).<br>Keycloak owns login; we only store the game profile."
+    note for UserProfile "keycloakId = the JWT 'sub' claim (unique).<br>Keycloak owns login; we only store the game profile."
 
     class AuditEntry {
         <<Entity>>
@@ -71,10 +74,8 @@ classDiagram
         -List~Item~ gear
         -SurvivorAttributes attributes
         -SurvivorType type
-        -UserProfile owner
         +load(Item item) void
         +performAction(Action action) double
-        +isOwnedBy(UserProfile user) boolean
         -getMaxLoad() double
     }
 
@@ -123,7 +124,6 @@ classDiagram
         -Long id
         -String name
         -double weight
-        -Survivor survivor
     }
     class Weapon {
         <<Entity>>
@@ -170,12 +170,12 @@ classDiagram
 
     %% ---------- Relationships ----------
     UserProfile "0..1" ..> "1" user_entity : keycloakId = id (JWT sub)
-    UserProfile "1" -- "0..1" Survivor : owns
+    UserProfile "0..1" --> "0..1" Survivor : owns (survivor_id)
     AuditEntry "*" --> "1" UserProfile : actor
     AuditEntry --> AuditAction
 
     Survivor *-- "1" SurvivorAttributes : attributes
-    Survivor "1" -- "*" Item : gear
+    Survivor "1" --> "*" Item : gear
     Survivor --> "*" Skill : skills
     Survivor --> "1" SurvivorType : type
     Survivor ..> Action : performs
@@ -211,7 +211,7 @@ classDiagram
     style ActionType fill:#fef3c7,stroke:#b45309,stroke-width:1.5px,color:#0f172a
     style WeaponCategory fill:#fef3c7,stroke:#b45309,stroke-width:1.5px,color:#0f172a
     %% proposed
-    style UserProfile fill:#fce7f3,stroke:#be185d,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
+    style UserProfile fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#0f172a
     style AuditEntry fill:#fce7f3,stroke:#be185d,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
     style AuditAction fill:#fce7f3,stroke:#be185d,stroke-width:2px,stroke-dasharray:6 4,color:#0f172a
     %% external
@@ -239,7 +239,7 @@ classDiagram
 
 ## Notes on the proposed classes
 
-**UserProfile** is the `Player` from the backlog. Keycloak owns the login, and we store only what the game needs, linked by `keycloakId` (the token's `sub` claim). It's created on the first authenticated request, so there's no register endpoint. Each profile owns at most one survivor. The foreign key lives on `Survivor` (`owner`), so `isOwnedBy()` can compare owners without a database call.
+**UserProfile** is the `Player` from the backlog. Keycloak owns the login, and we store only what the game needs, linked by `keycloakId` (the token's `sub` claim). It's created on the first authenticated request, so there's no register endpoint. Each profile owns at most one survivor. The foreign key lives on `UserProfile` (`survivor_id`, unique), and `Survivor` doesn't know about its profile. So the ownership check is `profile.owns(survivor)`, done in the service with the current user's profile.
 
 **The link to Keycloak (`user_entity`)** is a dashed line, not a foreign key. Keycloak keeps its users in its own `keycloak` database, and Postgres can't enforce a foreign key across databases. The link is by value: every token's `sub` claim holds the user's `user_entity.id`, and we store that as `UserProfile.keycloakId`. Our code only ever reads the token. It never queries or writes Keycloak's tables, because their layout can change between Keycloak versions. If you need a user's email or name, read it from the token's claims.
 
