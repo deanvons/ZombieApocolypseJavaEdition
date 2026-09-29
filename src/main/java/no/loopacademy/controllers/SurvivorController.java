@@ -1,6 +1,7 @@
 package no.loopacademy.controllers;
 
 import no.loopacademy.models.actions.Action;
+import no.loopacademy.dtos.request.CreateSurvivorRequest;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
@@ -24,8 +25,8 @@ public class SurvivorController {
     }
 
     @PostMapping
-    public Survivor createSurvivor(@RequestBody String name, @RequestBody SurvivorType survivorType) {
-        return survivorService.create(name, survivorType);
+    public Survivor createSurvivor(@RequestBody CreateSurvivorRequest request) {
+        return survivorService.create(request.name(), request.type());
     }
 
     @GetMapping("/{id}")
