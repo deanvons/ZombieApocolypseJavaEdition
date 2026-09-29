@@ -24,10 +24,6 @@ import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.services.SurvivorService;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/survivors")
 public class SurvivorController {
