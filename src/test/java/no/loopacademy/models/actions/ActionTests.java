@@ -1,4 +1,4 @@
-package actions;
+package no.loopacademy.models.actions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -21,8 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import no.loopacademy.models.actions.Action;
-import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;

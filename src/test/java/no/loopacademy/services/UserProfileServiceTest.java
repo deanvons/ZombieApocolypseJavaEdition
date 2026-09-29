@@ -1,4 +1,4 @@
-package service;
+package no.loopacademy.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -18,7 +18,6 @@ import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.UserProfileNotFoundException;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.UserProfileRepository;
-import no.loopacademy.services.UserProfileService;
 
 class UserProfileServiceTest {
 

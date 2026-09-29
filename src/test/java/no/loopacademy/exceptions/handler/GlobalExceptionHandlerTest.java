@@ -1,4 +1,4 @@
-package exceptions;
+package no.loopacademy.exceptions.handler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
@@ -13,8 +13,6 @@ import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceNotFoundException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
-import no.loopacademy.exceptions.handler.ErrorResponse;
-import no.loopacademy.exceptions.handler.GlobalExceptionHandler;
 
 public class GlobalExceptionHandlerTest {
 
