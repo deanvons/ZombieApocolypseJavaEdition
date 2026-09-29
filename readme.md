@@ -22,7 +22,7 @@ The plan is to grow it into a **Survivor Manager**. Each player joins the camp a
 | 1 | Service layer (in memory) | In Progress |
 | 2 | REST controllers + DTOs | In Progress |
 | 3 | PostgreSQL + JPA entities | |
-| 4 | Keycloak security, `Player` profile | |
+| 4 | Keycloak security, `UserProfile` | |
 | 5 | React frontend | |
 
 ## Prerequisites
@@ -76,6 +76,6 @@ These are the two decisions the course is built around. The full reasoning is in
 
 1. **Behaviour stays on the entity when it only uses the entity's own state.** `performAction()` and `load()` stay on `Survivor`. Services handle loading data, security and transactions.
    *Principle:* an entity must never reach out to the database, other services or the current user.
-2. **Keycloak owns identity, and our database owns the game.** A `Player` profile is linked to Keycloak by the `sub` claim, and each player has exactly one survivor. Anyone can view a survivor, but only its owner can change it.
+2. **Keycloak owns identity, and our database owns the game.** A `UserProfile` is linked to Keycloak by the `sub` claim, and owns exactly one survivor (the foreign key lives on the profile). Anyone can view a survivor, but only its owner can change it.
 
 
