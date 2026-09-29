@@ -15,6 +15,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.dtos.response.SurvivorResponse;
+import no.loopacademy.mappers.ItemMapper;
+import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
@@ -28,12 +31,20 @@ class SurvivorControllerTest {
 
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
+
+    @MockitoBean
+    private SurvivorMapper survivorMapper;
+
+    @MockitoBean
+    private ItemMapper itemMapper;
     
     @Test
     void getSurvivorsShouldReturnListOfSurvivors() throws Exception {
         //Arrange: Setup fake service return value
         Survivor rick = new Survivor("Rick", SurvivorType.OUTLAW);
         when(survivorService.findAll()).thenReturn(List.of(rick));
+        when(survivorMapper.toResponse(List.of(rick)))
+            .thenReturn(List.of(new SurvivorResponse(null, "Rick", "OUTLAW", rick.getSkills(), List.of())));
 
         //Act + Assert
         mockMvc.perform(get("/api/survivors"))
@@ -46,6 +57,7 @@ class SurvivorControllerTest {
     void getSurvivorsShouldReturnEmptyList() throws Exception {
         //Arrange
         when(survivorService.findAll()).thenReturn(List.of());
+        when(survivorMapper.toResponse(List.of())).thenReturn(List.of());
 
         //Act + assert
         mockMvc.perform(get("/api/survivors"))
@@ -58,6 +70,8 @@ class SurvivorControllerTest {
         //Arrange
         Survivor jessica = new Survivor("Jessica", SurvivorType.HERO);
         when(survivorService.findById(1L)).thenReturn(jessica);
+        when(survivorMapper.toResponse(jessica))
+            .thenReturn(new SurvivorResponse(1L, "Jessica", "HERO", jessica.getSkills(), List.of()));
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/1"))
