@@ -127,11 +127,11 @@ classDiagram
     }
     class Weapon {
         <<Entity>>
-        -int damage
+        -double damage
     }
     class Tool {
         <<Entity>>
-        -int durability
+        -double durability
     }
     class WeaponCategory {
         <<enum>>

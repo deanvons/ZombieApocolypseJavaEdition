@@ -1,4 +1,4 @@
-package survivor;
+package no.loopacademy.models.survivors;
 
 import java.util.List;
 
@@ -7,8 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.skills.Skill;
-import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorType;
 
 public class SurvivorTests {
 
