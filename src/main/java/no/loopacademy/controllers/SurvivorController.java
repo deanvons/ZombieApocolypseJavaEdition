@@ -21,14 +21,9 @@ import no.loopacademy.dtos.response.SurvivorResponse;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.actions.ActionResult;
-import no.loopacademy.models.actions.Action;
-import no.loopacademy.dtos.request.CreateSurvivorRequest;
-import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
-import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
