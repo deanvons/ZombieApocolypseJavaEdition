@@ -8,21 +8,21 @@ import jakarta.persistence.Entity;
 @Entity 
 @DiscriminatorValue("weapon")
 public class Weapon extends Item {
-    int damage;
+    double damage;
 
     public Weapon() {
     }
 
-    public Weapon(String name, Double weight, int damage) {
+    public Weapon(String name, Double weight, double damage) {
         super(name, weight);
         this.damage = damage;
     }
 
-    public int getDamage() {
+    public double getDamage() {
         return damage;
     }
 
-    public void setDamage(int damage) {
+    public void setDamage(double damage) {
         this.damage = damage;
     }
 
@@ -30,7 +30,7 @@ public class Weapon extends Item {
     public boolean equals(Object o) {
         if (!(o instanceof Weapon weapon)) return false;
         if (!super.equals(o)) return false;
-        return damage == weapon.damage;
+        return Double.compare(damage, weapon.damage) == 0;
     }
 
     @Override
