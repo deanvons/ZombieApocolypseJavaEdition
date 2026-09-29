@@ -1,13 +1,11 @@
 package no.loopacademy.controllers;
 
-import static org.junit.jupiter.api.Assertions.fail;
 import no.loopacademy.config.authConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,13 +25,9 @@ class HealthCheckControllerTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    void getApiHealthShouldReturnHtmlResponseOk() {
-        try {
-            mockMvc
-                .perform(MockMvcRequestBuilders.get("/api/health"))
-                .andExpect(MockMvcResultMatchers.status().isOk());
-        } catch (Exception e) {
-            fail();
-        }
-
-}}
+    void getApiHealthShouldReturnHtmlResponseOk() throws Exception {
+        mockMvc
+            .perform(get("/api/health"))
+            .andExpect(status().isOk());
+    }
+}
