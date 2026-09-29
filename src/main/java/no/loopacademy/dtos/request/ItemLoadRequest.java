@@ -17,8 +17,8 @@ public record ItemLoadRequest(
     Double weight,
 
     @Positive
-    Integer durability,
+    Double durability,
 
     @Positive 
-    Integer damage
+    Double damage
 ) {}
