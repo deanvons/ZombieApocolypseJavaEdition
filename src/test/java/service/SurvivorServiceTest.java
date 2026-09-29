@@ -33,7 +33,7 @@ public class SurvivorServiceTest {
     private ActionRepository actionRepository;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
@@ -58,7 +58,7 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    public void testSurvivorNotFound_shouldThrowException() {
+    void findById_SurvivorNotFound_shouldThrowException() {
 
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.findById(99L);
@@ -66,28 +66,7 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testCreateSurvivorWithCorrectType_checksCaregiverType_shouldPass() {
-        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
-
-        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
-
-        assertEquals(careGiver.getClass(), survivor.getClass());
-    }
-
-    @Test
-    void testFindAllSurvivors_shouldReturnAllSurvivors_shouldPass() {
-        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
-        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
-        List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
-
-        List<Survivor> actualsurvivors = survivorService.findAll();
-
-        assertEquals(expectedSurvivors, actualsurvivors);
-
-    }
-
-    @Test
-    void testFindSurvivorById_passingSurvivorId_shouldReturnSurvivorById_shouldPass() {
+    void findById_ExistingId_shouldReturnSurvivor() {
         Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorType.CAREGIVER);
         expectedSurvivor.setId(1L);
 
@@ -97,7 +76,28 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testAddSkillToSurvivor_survivor_survivorWithNewSkill() {
+    void create_CaregiverType_shouldReturnSurvivor() {
+        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
+
+        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+
+        assertEquals(careGiver.getClass(), survivor.getClass());
+    }
+
+    @Test
+    void findAll_shouldReturnAllSurvivors() {
+        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
+        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+        List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
+
+        List<Survivor> actualSurvivors = survivorService.findAll();
+
+        assertEquals(expectedSurvivors, actualSurvivors);
+
+    }
+
+    @Test
+    void addSkill_NewSkill_shouldAddSkill() {
         survivorService.create("CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
@@ -110,7 +110,7 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testAddSkillToSurvivorThatItAlreadyHas_survivorWithSkill_noChangeInSurvivorSkills() {
+    void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
         survivorService.create("CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
@@ -122,7 +122,7 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testRemoveSkillFromSurvivor_survivorWithSkill_survivorWithoutSkill() {
+    void removeSkill_ExistingSkill_shouldRemoveSkill() {
         survivorService.create("CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
@@ -133,7 +133,7 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void survivorServiceLoadItem_SurvivorIdItem_shouldThrowException() {
+    void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         String survivorName = "Kevin";
         double itemWeight = 500000.0;
@@ -148,13 +148,13 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void survivorServiceLoadItem_SurvivorIdItem_shouldLoadItemToSurvivor() {
+    void loadItem_ItemWithinCapacity_shouldAddItemToGear() {
         // ARRANGE
         String survivorName = "Kevin";
         double itemWeight = 5.0;
         Item item = new Item("Medkit", itemWeight);
-        List<Item> expextedGearList = new ArrayList<>();
-        expextedGearList.add(item);
+        List<Item> expectedGearList = new ArrayList<>();
+        expectedGearList.add(item);
         Survivor survivor = survivorService.create(survivorName, SurvivorType.CAREGIVER);
 
         long survivorId = survivor.getId();
@@ -164,20 +164,7 @@ public class SurvivorServiceTest {
         List<Item> actualGear = survivor.getGear();
 
         // ASSERT
-        assertEquals(expextedGearList, actualGear);
-    }
-
-    @Test
-    void load_ShouldThrowCarryWeightExceededException_WhenLoadingAnItemThatExceedsMaxWeight() {
-        // Arrange
-        String expectedName = "Melvin";
-        Double heavyItemweight = 9999.0;
-        Survivor survivor = survivorService.create(expectedName, SurvivorType.CAREGIVER);
-        Item testItem = new Item("Test item", heavyItemweight);
-
-        // Assert
-        assertThrows(OverloadedException.class,
-                () -> survivorService.loadItem(survivor.getId(), testItem));
+        assertEquals(expectedGearList, actualGear);
     }
 
     @Test

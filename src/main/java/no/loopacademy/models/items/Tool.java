@@ -8,21 +8,21 @@ import jakarta.persistence.Entity;
 @Entity
 @DiscriminatorValue("tool")
 public class Tool extends Item {
-    int durability;
+    double durability;
 
     public Tool() {
     }
 
-    public Tool(String name, Double weight, Integer durability) {
+    public Tool(String name, Double weight, double durability) {
         super(name, weight);
         this.durability = durability;
     }
 
-    public Integer getDurability() {
+    public double getDurability() {
         return durability;
     }
 
-    public void setDurability(Integer durability) {
+    public void setDurability(double durability) {
         this.durability = durability;
     }
 
@@ -30,7 +30,7 @@ public class Tool extends Item {
     public boolean equals(Object o) {
         if (!(o instanceof Tool tool)) return false;
         if (!super.equals(o)) return false;
-        return durability == tool.durability;
+        return Double.compare(durability, tool.durability) == 0;
     }
 
     @Override

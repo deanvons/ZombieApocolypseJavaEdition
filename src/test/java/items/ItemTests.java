@@ -57,13 +57,13 @@ public class ItemTests {
         // Arrange
         String expectedName = "Spanner";
         double expectedWeight = 10;
-        int expectedDurability = 100;
+        double expectedDurability = 100;
         Tool tool = new Tool(expectedName, expectedWeight, expectedDurability);
 
         // Act
         String actualName = tool.getName();
         double actualWeight = tool.getWeight();
-        int actualDurability = tool.getDurability();
+        double actualDurability = tool.getDurability();
 
         // Assert
         assertEquals(expectedName, actualName);
@@ -76,14 +76,14 @@ public class ItemTests {
         // Arrange
         String expectedName = "Ak-47";
         double expectedWeight = 5;
-        int expectedDamage = 10;
+        double expectedDamage = 10;
 
         Weapon w = new Weapon(expectedName, expectedWeight, expectedDamage);
 
         // Act
         String actualName = w.getName();
         double actualWeight = w.getWeight();
-        int actualDamage = w.getDamage();
+        double actualDamage = w.getDamage();
 
         // Assert
         assertEquals(expectedName, actualName);
