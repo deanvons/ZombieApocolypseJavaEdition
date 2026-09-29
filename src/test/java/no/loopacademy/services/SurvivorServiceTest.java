@@ -74,7 +74,9 @@ public class SurvivorServiceTest {
 
     @Test
     void create_CaregiverType_shouldReturnSurvivor() {
-        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
+        String survivorName = "Tester";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor careGiver = new Survivor(survivorName, survivorType);
 
         Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
 
@@ -133,9 +135,11 @@ public class SurvivorServiceTest {
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         String survivorName = "Kevin";
-        double itemWeight = 500000.0;
-        Survivor survivor = survivorService.create(survivorName, SurvivorType.CAREGIVER);
-        Item item = new Item("Medkit", itemWeight);
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        String itemName = "Medkit";
+        Double itemWeight = 500000.0;
+        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Item item = new Item(itemName, itemWeight);
         long survivorId = survivor.getId();
 
         // ACT & ASSERT
@@ -148,11 +152,13 @@ public class SurvivorServiceTest {
     void loadItem_ItemWithinCapacity_shouldAddItemToGear() {
         // ARRANGE
         String survivorName = "Kevin";
-        double itemWeight = 5.0;
-        Item item = new Item("Medkit", itemWeight);
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        String itemName = "Medkit";
+        Double itemWeight = 5.0;
+        Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(survivorName, SurvivorType.CAREGIVER);
+        Survivor survivor = survivorService.create(survivorName, survivorType);
 
         long survivorId = survivor.getId();
 

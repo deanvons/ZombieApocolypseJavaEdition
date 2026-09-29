@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.dtos.request.ItemLoadRequest;
+import no.loopacademy.dtos.response.ItemResponse;
 import no.loopacademy.dtos.response.SurvivorResponse;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
@@ -51,65 +52,88 @@ class SurvivorControllerTest {
     @Test
     void getSurvivorsShouldReturnListOfSurvivors() throws Exception {
         //Arrange: Setup fake service return value
-        Survivor rick = new Survivor("Rick", SurvivorType.OUTLAW);
+        String survivorName = "Rick";
+        String expectedSurvivorName = "Rick";
+        int expectedSurvivorCount = 1;
+        SurvivorType survivorType = SurvivorType.OUTLAW;
+        Survivor rick = new Survivor(survivorName, survivorType);
+        Long responseId = null;
+        String responseType = "OUTLAW";
+        List<Skill> responseSkills = rick.getSkills();
+        List<ItemResponse> responseGear = List.of();
+        SurvivorResponse rickResponse = new SurvivorResponse(responseId, survivorName, responseType, responseSkills, responseGear);
         when(survivorService.findAll()).thenReturn(List.of(rick));
         when(survivorMapper.toResponse(List.of(rick)))
-            .thenReturn(List.of(new SurvivorResponse(null, "Rick", "OUTLAW", rick.getSkills(), List.of())));
+            .thenReturn(List.of(rickResponse));
 
         //Act + Assert
         mockMvc.perform(get("/api/survivors"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].name").value("Rick"));
+            .andExpect(jsonPath("$.length()").value(expectedSurvivorCount))
+            .andExpect(jsonPath("$[0].name").value(expectedSurvivorName));
     }
 
     @Test 
     void getSurvivorsShouldReturnEmptyList() throws Exception {
         //Arrange
+        int expectedSurvivorCount = 0;
         when(survivorService.findAll()).thenReturn(List.of());
         when(survivorMapper.toResponse(List.of())).thenReturn(List.of());
 
         //Act + assert
         mockMvc.perform(get("/api/survivors"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(0));
+            .andExpect(jsonPath("$.length()").value(expectedSurvivorCount));
     }
 
     @Test 
     void getSurvivorByIdShouldReturnSurvivor() throws Exception {
         //Arrange
-        Survivor jessica = new Survivor("Jessica", SurvivorType.HERO);
+        String survivorName = "Jessica";
+        String expectedSurvivorName = "Jessica";
+        SurvivorType survivorType = SurvivorType.HERO;
+        Survivor jessica = new Survivor(survivorName, survivorType);
+        Long responseId = 1L;
+        String responseType = "HERO";
+        List<Skill> responseSkills = jessica.getSkills();
+        List<ItemResponse> responseGear = List.of();
+        SurvivorResponse jessicaResponse = new SurvivorResponse(responseId, survivorName, responseType, responseSkills, responseGear);
         when(survivorService.findById(1L)).thenReturn(jessica);
         when(survivorMapper.toResponse(jessica))
-            .thenReturn(new SurvivorResponse(1L, "Jessica", "HERO", jessica.getSkills(), List.of()));
+            .thenReturn(jessicaResponse);
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/1"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value("Jessica"));
+            .andExpect(jsonPath("$.name").value(expectedSurvivorName));
     }
 
     @Test
     void getSurvivorByIdShouldReturn404IfNotFound() throws Exception {
         //Arrange
-        String errorMsg = "Survivor Not Found";
+        int expectedStatusCode = 404;
+        String expectedErrorMessage = "Survivor Not Found";
         when(survivorService.findById(1L))
-            .thenThrow(new SurvivorNotFoundException(errorMsg));
+            .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/1"))
             .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.status").value(404))
-            .andExpect(jsonPath("$.message").value(errorMsg));
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
         
     }
 
     /** POST, PUT, DELETE requests */
     @Test
     void createSurvivor_ReturnsCreatedSurvivor() throws Exception {
-        Survivor survivor = new Survivor("Alice", SurvivorType.TESTSURVIVOR);
-        survivor.setId(1L);
-        SurvivorResponse response = response(1L, "Alice", "TESTSURVIVOR");
+        String survivorName = "Alice";
+        Long expectedSurvivorId = 1L;
+        String expectedSurvivorType = "TESTSURVIVOR";
+        SurvivorType survivorType = SurvivorType.TESTSURVIVOR;
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        survivor.setId(expectedSurvivorId);
+        SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
         when(survivorMapper.toSurvivorType("testsurvivor")).thenReturn(SurvivorType.TESTSURVIVOR);
         when(survivorService.create("Alice", SurvivorType.TESTSURVIVOR)).thenReturn(survivor);
         when(survivorMapper.toResponse(survivor)).thenReturn(response);
@@ -118,25 +142,28 @@ class SurvivorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Alice\",\"type\":\"testsurvivor\"}"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
+            .andExpect(jsonPath("$.id").value(expectedSurvivorId))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Alice"))
-                .andExpect(jsonPath("$.type").value("TESTSURVIVOR"));
+            .andExpect(jsonPath("$.name").value(survivorName))
+            .andExpect(jsonPath("$.type").value(expectedSurvivorType));
 
         verify(survivorService).create("Alice", SurvivorType.TESTSURVIVOR);
     }
 
     @Test
     void addSkill_ReturnsUpdatedSurvivor() throws Exception {
-        Survivor survivor = new Survivor("Alice", SurvivorType.CAREGIVER);
+        String survivorName = "Alice";
+        String expectedSurvivorName = "Alice";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor survivor = new Survivor(survivorName, survivorType);
         when(survivorService.findById(1L)).thenReturn(survivor);
-        when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, "Alice", "CAREGIVER"));
+        when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, survivorName, "CAREGIVER"));
 
         mockMvc.perform(post("/api/survivors/1/skills")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"skill\":\"Accuracy\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alice"));
+                .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
         verify(survivorService).addSkill(1L, Skill.Accuracy);
         verify(survivorService).findById(1L);
@@ -152,9 +179,17 @@ class SurvivorControllerTest {
 
     @Test
     void loadItem_ReturnsUpdatedSurvivor() throws Exception {
-        Survivor survivor = new Survivor("Alice", SurvivorType.CAREGIVER);
-        Tool medkit = new Tool("Medkit", 2.5, 10);
-        ItemLoadRequest request = new ItemLoadRequest("tool", "Medkit", 2.5, 10.0, null);
+        String survivorName = "Alice";
+        String expectedSurvivorName = "Alice";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        String itemName = "Medkit";
+        Double itemWeight = 2.5;
+        Double itemDurability = 10.0;
+        Tool medkit = new Tool(itemName, itemWeight, itemDurability);
+        String itemType = "tool";
+        Double itemDamage = null;
+        ItemLoadRequest request = new ItemLoadRequest(itemType, itemName, itemWeight, itemDurability, itemDamage);
         when(survivorService.findById(1L)).thenReturn(survivor);
         when(itemMapper.toEntity(request)).thenReturn(medkit);
         when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, "Alice", "CAREGIVER"));
@@ -163,23 +198,26 @@ class SurvivorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"type\":\"tool\",\"name\":\"Medkit\",\"weight\":2.5,\"durability\":10}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alice"));
+                .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
         verify(survivorService).loadItem(1L, medkit);
     }
 
     @Test
     void performAction_ReturnsActionEffectiveness() throws Exception {
-        ActionResult result = new ActionResult(null, null, 72.5);
-        when(survivorService.performAction(1L, 2L)).thenReturn(result);
+        Long expectedSurvivorId = 1L;
+        Long expectedActionId = 2L;
+        double expectedEffectiveness = 72.5;
+        ActionResult result = new ActionResult(null, null, expectedEffectiveness);
+        when(survivorService.performAction(expectedSurvivorId, expectedActionId)).thenReturn(result);
 
-        mockMvc.perform(post("/api/survivors/1/actions/2"))
+        mockMvc.perform(post("/api/survivors/" + expectedSurvivorId + "/actions/" + expectedActionId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.survivorId").value(1))
-                .andExpect(jsonPath("$.actionId").value(2))
-                .andExpect(jsonPath("$.effectiveness").value(72.5));
+            .andExpect(jsonPath("$.survivorId").value(expectedSurvivorId))
+            .andExpect(jsonPath("$.actionId").value(expectedActionId))
+            .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
-        verify(survivorService).performAction(1L, 2L);
+        verify(survivorService).performAction(expectedSurvivorId, expectedActionId);
     }
 
     private SurvivorResponse response(Long id, String name, String type) {

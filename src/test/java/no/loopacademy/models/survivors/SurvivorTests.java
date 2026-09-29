@@ -14,8 +14,9 @@ public class SurvivorTests {
     void caregiverShouldBeCreatedWithCorrectName() {
         // Arrange
         String expectedName = "Melvin";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
         // Act
-        Survivor c = new Survivor(expectedName, SurvivorType.CAREGIVER);
+        Survivor c = new Survivor(expectedName, survivorType);
         String actualName = c.getName();
         // Assert
         assertEquals(expectedName, actualName);
@@ -34,7 +35,9 @@ public class SurvivorTests {
         expectedAttributes.setTrustworthiness(8);
 
         // Act
-        Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = new Survivor(survivorName, survivorType);
         SurvivorAttributes actualAttributes = john.getAttributes();
 
         // Assert
@@ -44,7 +47,9 @@ public class SurvivorTests {
     @Test
     void caregiverShouldBeCreatedWithCorrectSkills() {
 
-        Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = new Survivor(survivorName, survivorType);
         List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking);
         List<Skill> actualSkills = john.getSkills();
 

@@ -34,13 +34,14 @@ class UserProfileServiceTest {
 
     @Test
     void createShouldSaveNewProfile() {
+        String expectedDisplayName = "rick";
         when(repository.existsByKeycloakId(KEYCLOAK_ID)).thenReturn(false);
         when(repository.saveAndFlush(any(UserProfile.class))).thenAnswer(call -> call.getArgument(0));
 
-        UserProfile profile = service.create(KEYCLOAK_ID, "rick");
+        UserProfile profile = service.create(KEYCLOAK_ID, expectedDisplayName);
 
         assertEquals(KEYCLOAK_ID, profile.getKeycloakId());
-        assertEquals("rick", profile.getDisplayName());
+        assertEquals(expectedDisplayName, profile.getDisplayName());
     }
 
     @Test
