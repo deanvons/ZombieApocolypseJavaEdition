@@ -1,4 +1,4 @@
-package service;
+package no.loopacademy.services;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,7 +24,6 @@ import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
-import no.loopacademy.services.SurvivorService;
 
 public class SurvivorServiceTest {
     private SurvivorService survivorService;

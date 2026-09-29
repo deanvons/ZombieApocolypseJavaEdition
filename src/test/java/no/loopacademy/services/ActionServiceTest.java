@@ -1,4 +1,4 @@
-package service;
+package no.loopacademy.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -16,7 +16,6 @@ import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
-import no.loopacademy.services.ActionService;
 
 public class ActionServiceTest {
     ActionService actionService;
