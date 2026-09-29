@@ -1,5 +1,6 @@
 package no.loopacademy.services;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
@@ -55,7 +56,8 @@ public class SurvivorService {
 
     @Transactional
     public void addSkill(Long id, Skill skill) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (!survivor.getSkills().contains(skill)) {
             survivor.getSkills().add(skill);
         }
@@ -63,12 +65,15 @@ public class SurvivorService {
 
     @Transactional
     public void removeSkill(Long id, Skill skill) {
-        survivorRepository.getReferenceById(id).getSkills().remove(skill);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        survivor.getSkills().remove(skill);
     }
 
     @Transactional
     public void loadItem(Long id, Item item) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         double currentLoad = survivor.getGear().stream()
                 .mapToDouble(Item::getWeight)
                 .sum();
@@ -76,20 +81,20 @@ public class SurvivorService {
         if (currentLoad + item.getWeight() > getMaxLoad(survivor)) {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
-        survivorRepository.getReferenceById(id).getGear().add(item);
+        survivor.getGear().add(item);
 
     }
 
-    @Transactional(readOnly = true)
     private double getMaxLoad(Survivor survivor) {
-        return 10 + survivorRepository
-                .getReferenceById(survivor.getId()).getAttributes().getStrength() * 3;
+        return 10 + survivor.getAttributes().getStrength() * 3;
     }
 
     @Transactional(readOnly = true)
     public ActionResult performAction(Long id, Long actionId) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
-        Action action = actionRepository.getReferenceById(actionId);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        Action action = actionRepository.findById(actionId)
+                .orElseThrow(() -> new ActionNotFoundException("Action not found"));
         double effectiveness = 0.0;
 
         double strengthContrib = survivor.getAttributes().getStrength() * action.getAttributeWeights().getStrength();

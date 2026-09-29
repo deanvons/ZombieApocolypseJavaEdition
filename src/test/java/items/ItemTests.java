@@ -46,6 +46,8 @@ public class ItemTests {
         });
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
+        when(repository.findById(any(Long.class)))
+                .thenAnswer(invocation -> java.util.Optional.ofNullable(survivors.get(invocation.getArgument(0))));
 
         survivorService = new SurvivorService(repository, actionRepository);
     }
