@@ -6,6 +6,6 @@ public record ItemResponse(
     String type,
     String name,
     Double weight,
-    Integer durability,
-    Integer damage
+    Double durability,
+    Double damage
 ) {}
