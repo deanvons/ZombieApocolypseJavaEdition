@@ -1,9 +1,11 @@
 INSERT INTO survivor (name, type, strength, endurance, agility, courage, intelligence, leadership, trustworthiness)
-VALUES
+SELECT v.name, v.type, v.strength, v.endurance, v.agility, v.courage, v.intelligence, v.leadership, v.trustworthiness
+FROM (VALUES
     ('John', 'CAREGIVER', 2, 6, 3, 5, 8, 5, 8),
     ('Jessica', 'HERO', 9, 6, 5, 8, 3, 6, 2),
     ('Rick', 'OUTLAW', 7, 6, 9, 6, 5, 3, 1)
-ON CONFLICT (name) DO NOTHING;
+) AS v(name, type, strength, endurance, agility, courage, intelligence, leadership, trustworthiness)
+WHERE NOT EXISTS (SELECT 1 FROM survivor s WHERE s.name = v.name);
 
 -- survivor_skills has no unique constraint, so skip survivors that already have skills.
 INSERT INTO survivor_skills (survivor_id, skills)
