@@ -10,6 +10,7 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,23 @@ public class SurvivorService {
 
     @Transactional(readOnly = true)
     public List<Survivor> findAll() {
-        return survivorRepository.findAll();
+        List<Survivor> survivors = survivorRepository.findAll();
+        survivors.forEach(this::initializeCollections);
+        return survivors;
     }
 
     @Transactional
     public Survivor findById(Long id) {
-        return survivorRepository.findById(id).orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        Survivor survivor = survivorRepository.findById(id).orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        initializeCollections(survivor);
+        return survivor;
+    }
+
+    // open-in-view is off, so lazy collections must be loaded before the transaction ends,
+    // otherwise mapping to a DTO in the controller throws LazyInitializationException
+    private void initializeCollections(Survivor survivor) {
+        Hibernate.initialize(survivor.getSkills());
+        Hibernate.initialize(survivor.getGear());
     }
 
     @Transactional
