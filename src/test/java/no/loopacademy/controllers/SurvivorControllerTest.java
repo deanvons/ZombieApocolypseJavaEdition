@@ -154,7 +154,7 @@ class SurvivorControllerTest {
     void loadItem_ReturnsUpdatedSurvivor() throws Exception {
         Survivor survivor = new Survivor("Alice", SurvivorType.CAREGIVER);
         Tool medkit = new Tool("Medkit", 2.5, 10);
-        ItemLoadRequest request = new ItemLoadRequest("tool", "Medkit", 2.5, 10, null);
+        ItemLoadRequest request = new ItemLoadRequest("tool", "Medkit", 2.5, 10.0, null);
         when(survivorService.findById(1L)).thenReturn(survivor);
         when(itemMapper.toEntity(request)).thenReturn(medkit);
         when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, "Alice", "CAREGIVER"));

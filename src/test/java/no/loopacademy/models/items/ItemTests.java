@@ -1,4 +1,4 @@
-package items;
+package no.loopacademy.models.items;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,9 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import no.loopacademy.exceptions.OverloadedException;
-import no.loopacademy.models.items.Item;
-import no.loopacademy.models.items.Tool;
-import no.loopacademy.models.items.Weapon;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
