@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +25,8 @@ import no.loopacademy.dtos.response.ItemResponse;
 import no.loopacademy.dtos.response.SurvivorResponse;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
+import no.loopacademy.mappers.ItemMapperImpl;
+import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.skills.Skill;
@@ -33,6 +36,7 @@ import no.loopacademy.services.SurvivorService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import({SurvivorMapperImpl.class, ItemMapperImpl.class})   // real MapStruct mappers, so the JSON shape is the real one
 class SurvivorControllerTest {
 
     @Autowired 
@@ -40,12 +44,6 @@ class SurvivorControllerTest {
 
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
-
-    @MockitoBean
-    private SurvivorMapper survivorMapper;
-
-    @MockitoBean
-    private ItemMapper itemMapper;
     
 
     //** GET requests */
@@ -63,8 +61,7 @@ class SurvivorControllerTest {
         List<ItemResponse> responseGear = List.of();
         SurvivorResponse rickResponse = new SurvivorResponse(responseId, survivorName, responseType, responseSkills, responseGear);
         when(survivorService.findAll()).thenReturn(List.of(rick));
-        when(survivorMapper.toResponse(List.of(rick)))
-            .thenReturn(List.of(rickResponse));
+        
 
         //Act + Assert
         mockMvc.perform(get("/api/survivors"))
@@ -78,7 +75,6 @@ class SurvivorControllerTest {
         //Arrange
         int expectedSurvivorCount = 0;
         when(survivorService.findAll()).thenReturn(List.of());
-        when(survivorMapper.toResponse(List.of())).thenReturn(List.of());
 
         //Act + assert
         mockMvc.perform(get("/api/survivors"))
@@ -99,8 +95,6 @@ class SurvivorControllerTest {
         List<ItemResponse> responseGear = List.of();
         SurvivorResponse jessicaResponse = new SurvivorResponse(responseId, survivorName, responseType, responseSkills, responseGear);
         when(survivorService.findById(1L)).thenReturn(jessica);
-        when(survivorMapper.toResponse(jessica))
-            .thenReturn(jessicaResponse);
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/1"))
@@ -134,9 +128,7 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(expectedSurvivorId);
         SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
-        when(survivorMapper.toSurvivorType("testsurvivor")).thenReturn(SurvivorType.TESTSURVIVOR);
         when(survivorService.create("Alice", SurvivorType.TESTSURVIVOR)).thenReturn(survivor);
-        when(survivorMapper.toResponse(survivor)).thenReturn(response);
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -157,7 +149,6 @@ class SurvivorControllerTest {
         SurvivorType survivorType = SurvivorType.CAREGIVER;
         Survivor survivor = new Survivor(survivorName, survivorType);
         when(survivorService.findById(1L)).thenReturn(survivor);
-        when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, survivorName, "CAREGIVER"));
 
         mockMvc.perform(post("/api/survivors/1/skills")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -191,8 +182,6 @@ class SurvivorControllerTest {
         Double itemDamage = null;
         ItemLoadRequest request = new ItemLoadRequest(itemType, itemName, itemWeight, itemDurability, itemDamage);
         when(survivorService.findById(1L)).thenReturn(survivor);
-        when(itemMapper.toEntity(request)).thenReturn(medkit);
-        when(survivorMapper.toResponse(survivor)).thenReturn(response(1L, "Alice", "CAREGIVER"));
 
         mockMvc.perform(post("/api/survivors/1/items")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -217,7 +206,7 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.actionId").value(expectedActionId))
             .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
-        verify(survivorService).performAction(expectedSurvivorId, expectedActionId);
+        verify(survivorService).performAction(1L, 2L);
     }
 
     private SurvivorResponse response(Long id, String name, String type) {
