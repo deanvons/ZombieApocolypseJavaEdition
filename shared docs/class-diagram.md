@@ -123,7 +123,6 @@ classDiagram
         -Long id
         -String name
         -double weight
-        -Survivor survivor
     }
     class Weapon {
         <<Entity>>
@@ -175,7 +174,7 @@ classDiagram
     AuditEntry --> AuditAction
 
     Survivor *-- "1" SurvivorAttributes : attributes
-    Survivor "1" -- "*" Item : gear
+    Survivor "1" --> "*" Item : gear
     Survivor --> "*" Skill : skills
     Survivor --> "1" SurvivorType : type
     Survivor ..> Action : performs
