@@ -193,7 +193,7 @@ class SurvivorControllerTest {
 
 
     @Test
-    void createUser_ShouldThrow409WhenAlreadyHasSurvivor () throws Exception {
+    void createSurvivor_AlreadyHasSurvivor_Returns409() throws Exception {
         int expectedStatusCode = 409;
         String expectedErrorMessage = "This user already has a survivor";
 
