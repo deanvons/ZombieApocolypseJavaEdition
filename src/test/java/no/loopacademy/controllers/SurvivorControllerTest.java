@@ -78,7 +78,8 @@ class SurvivorControllerTest {
         mockMvc.perform(get("/api/survivors"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(expectedSurvivorCount))
-            .andExpect(jsonPath("$[0].name").value(expectedSurvivorName));
+            .andExpect(jsonPath("$[0].name").value(expectedSurvivorName))
+            .andExpect(jsonPath("$[0].type").value(expectedSurvivorTypeString));
     }
 
     @Test 
@@ -102,7 +103,8 @@ class SurvivorControllerTest {
         //Act + assert
         mockMvc.perform(get("/api/survivors/" + survivorId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value(expectedSurvivorName));
+            .andExpect(jsonPath("$.name").value(expectedSurvivorName))
+            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
     }
 
     @Test
