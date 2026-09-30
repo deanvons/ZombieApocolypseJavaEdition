@@ -19,6 +19,7 @@ import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.items.Item;
@@ -36,6 +37,9 @@ public class SurvivorServiceTest {
     private String secondSurvivorName;
     private SurvivorType survivorType;
     private Long survivorId;
+    private Long unknownSurvivorId;
+    private Long actionId;
+    private Long unknownActionId;
     private String itemName;
     private Double itemWeight;
 
@@ -45,6 +49,9 @@ public class SurvivorServiceTest {
         secondSurvivorName = "SecondGenericSurvivorName";
         survivorType = SurvivorType.CAREGIVER;
         survivorId = 1L;
+        unknownSurvivorId = 99L;
+        actionId = 1L;
+        unknownActionId = 99L;
         itemName = "GenericItemName";
         itemWeight = 5.0;
 
@@ -64,8 +71,7 @@ public class SurvivorServiceTest {
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-        when(repository.getReferenceById(any(Long.class)))
-                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
+        when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
 
         userProfileRepository = mock(UserProfileRepository.class);
 
@@ -76,7 +82,7 @@ public class SurvivorServiceTest {
     void findById_SurvivorNotFound_shouldThrowException() {
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.findById(99L);
+            survivorService.findById(unknownSurvivorId);
         });
     }
 
@@ -174,6 +180,45 @@ public class SurvivorServiceTest {
 
         // ASSERT
         assertEquals(expectedGearList, actualGear);
+    }
+
+    @Test
+    void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.addSkill(unknownSurvivorId, Skill.Cooking);
+        });
+    }
+
+    @Test
+    void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.removeSkill(unknownSurvivorId, Skill.Cooking);
+        });
+    }
+
+    @Test
+    void loadItem_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        Item item = new Item(itemName, itemWeight);
+
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.loadItem(unknownSurvivorId, item);
+        });
+    }
+
+    @Test
+    void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.performAction(unknownSurvivorId, actionId);
+        });
+    }
+
+    @Test
+    void performAction_UnknownAction_shouldThrowActionNotFoundException() {
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
+
+        assertThrows(ActionNotFoundException.class, () -> {
+            survivorService.performAction(survivor.getId(), unknownActionId);
+        });
     }
 
     // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule

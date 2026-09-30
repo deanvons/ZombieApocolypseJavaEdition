@@ -58,8 +58,6 @@ public class ActionTests {
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-        when(repository.getReferenceById(any(Long.class)))
-                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
         List<Action> actions = List.of(
                 action(1L, "Attack", ActionType.Attack, weights(0.6, 0.2, 0.0, 0.0, 0.1, 0.1, 0.0)),
@@ -69,7 +67,6 @@ public class ActionTests {
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
-        when(actionRepository.getReferenceById(primaryActionId)).thenReturn(actions.getFirst());
 
         userProfileRepository = mock(UserProfileRepository.class);
 

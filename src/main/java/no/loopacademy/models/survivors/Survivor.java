@@ -15,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+
 import jakarta.persistence.OneToOne;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.actions.Action;
@@ -62,22 +63,7 @@ public class Survivor {
         this.skills = new ArrayList<>(type.getDefaultSkills());
     }
 
-    public void load(Item item) {
-        double currentMaxLoadCapacity = getMaxLoad();
-        double currentLoad = 0;
-
-        for (Item i : gear) {
-            currentLoad += i.getWeight();
-        }
-
-        if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
-            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
-        } else {
-            gear.add(item);
-        }
-    }
-
-    private double getMaxLoad() {
+    public double getMaxLoad() {
         return 10 + attributes.getStrength() * 3;
     }
 
