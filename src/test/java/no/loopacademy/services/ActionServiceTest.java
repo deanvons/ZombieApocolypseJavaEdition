@@ -41,15 +41,19 @@ public class ActionServiceTest {
 
     @Test
     void shouldReturnFiveSampleActions() {
-        assertEquals(5, actionService.findAll().size());
+        int expectedActionCount = 5;
+        assertEquals(expectedActionCount, actionService.findAll().size());
     }
 
     @Test
     void shouldFindActionById() {
-        Action action = actionService.findById(1L);
+        Long actionId = 1L;
+        String expectedActionName = "Attack";
+        ActionType expectedActionType = ActionType.Attack;
+        Action action = actionService.findById(actionId);
 
-        assertEquals("Attack", action.getName());
-        assertEquals(ActionType.Attack, action.getType());
+        assertEquals(expectedActionName, action.getName());
+        assertEquals(expectedActionType, action.getType());
     }
 
     @Test
@@ -58,7 +62,10 @@ public class ActionServiceTest {
     }
 
     private Action action(Long id, String name, ActionType type) {
-        Action action = new Action(name, type, "", "", new AttributeWeights());
+        String actionEffect = "";
+        String actionTarget = "";
+        AttributeWeights actionAttributeWeights = new AttributeWeights();
+        Action action = new Action(name, type, actionEffect, actionTarget, actionAttributeWeights);
         action.setId(id);
         return action;
     }

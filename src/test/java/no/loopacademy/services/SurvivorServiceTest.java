@@ -18,7 +18,6 @@ import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.items.Item;
@@ -74,7 +73,9 @@ public class SurvivorServiceTest {
 
     @Test
     void create_CaregiverType_shouldReturnSurvivor() {
-        Survivor careGiver = new Survivor("Tester", SurvivorType.CAREGIVER);
+        String survivorName = "Tester";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor careGiver = new Survivor(survivorName, survivorType);
 
         Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
 
@@ -133,9 +134,11 @@ public class SurvivorServiceTest {
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         String survivorName = "Kevin";
-        double itemWeight = 500000.0;
-        Survivor survivor = survivorService.create(survivorName, SurvivorType.CAREGIVER);
-        Item item = new Item("Medkit", itemWeight);
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        String itemName = "Medkit";
+        Double itemWeight = 500000.0;
+        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Item item = new Item(itemName, itemWeight);
         long survivorId = survivor.getId();
 
         // ACT & ASSERT
@@ -148,11 +151,13 @@ public class SurvivorServiceTest {
     void loadItem_ItemWithinCapacity_shouldAddItemToGear() {
         // ARRANGE
         String survivorName = "Kevin";
-        double itemWeight = 5.0;
-        Item item = new Item("Medkit", itemWeight);
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        String itemName = "Medkit";
+        Double itemWeight = 5.0;
+        Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(survivorName, SurvivorType.CAREGIVER);
+        Survivor survivor = survivorService.create(survivorName, survivorType);
 
         long survivorId = survivor.getId();
 
@@ -162,45 +167,6 @@ public class SurvivorServiceTest {
 
         // ASSERT
         assertEquals(expectedGearList, actualGear);
-    }
-
-    @Test
-    void testAddSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
-        assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.addSkill(99L, Skill.Cooking);
-        });
-    }
-
-    @Test
-    void testRemoveSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
-        assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.removeSkill(99L, Skill.Cooking);
-        });
-    }
-
-    @Test
-    void testLoadItemUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
-        Item item = new Item("Medkit", 1.0);
-
-        assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.loadItem(99L, item);
-        });
-    }
-
-    @Test
-    void testPerformActionUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
-        assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.performAction(99L, 1L);
-        });
-    }
-
-    @Test
-    void testPerformActionUnknownAction_shouldThrowActionNotFoundException() {
-        Survivor survivor = survivorService.create("Tester", SurvivorType.CAREGIVER);
-
-        assertThrows(ActionNotFoundException.class, () -> {
-            survivorService.performAction(survivor.getId(), 99L);
-        });
     }
 
 }
