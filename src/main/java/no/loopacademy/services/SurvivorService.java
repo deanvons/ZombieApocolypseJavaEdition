@@ -82,7 +82,7 @@ public class SurvivorService {
         if (currentLoad + item.getWeight() > survivor.getMaxLoad()) {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
-        survivor.load(item);
+        survivor.getGear().add(item);
 
     }
 
