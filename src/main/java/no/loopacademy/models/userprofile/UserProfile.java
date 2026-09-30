@@ -95,6 +95,15 @@ public class UserProfile {
     }
 
     public void setSurvivor(Survivor survivor) {
+        //First, clear old survivor's link to user
+        if (this.survivor != null) {
+            this.survivor.setUser(null);
+        }
+        //Set survivor to incoming
         this.survivor = survivor;
+        // Keep both sides in sync: the new survivor points back to this profile
+        if (survivor != null) {
+            survivor.setUser(this);
+        }
     }
 }
