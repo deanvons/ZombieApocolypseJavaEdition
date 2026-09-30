@@ -11,12 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,13 +28,16 @@ import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 
 public class SurvivorServiceTest {
     private SurvivorService survivorService;
+    private UserProfileRepository userProfileRepository;
     private SurvivorRepository repository;
     private ActionRepository actionRepository;
     private String survivorName;
@@ -74,7 +80,9 @@ public class SurvivorServiceTest {
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
         when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
 
-        survivorService = new SurvivorService(repository, actionRepository);
+        userProfileRepository = mock(UserProfileRepository.class);
+
+        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
     }
 
     @Test
@@ -87,7 +95,7 @@ public class SurvivorServiceTest {
 
     @Test
     void findById_ExistingId_shouldReturnSurvivor() {
-        Survivor expectedSurvivor = survivorService.create(survivorName, survivorType);
+        Survivor expectedSurvivor = survivorService.create(newUser(), survivorName, survivorType);
         expectedSurvivor.setId(survivorId);
 
         Survivor actualSurvivor = survivorService.findById(survivorId);
@@ -96,12 +104,42 @@ public class SurvivorServiceTest {
     }
 
     @Test
+    void findByUser_UserHasSurvivor_shouldReturnSurvivor() {
+        UserProfile user = newUser();
+        Survivor created = survivorService.create(user, survivorName, survivorType);
+
+        assertEquals(created, survivorService.findByUser(user));
+    }
+
+    @Test 
+    void findByUser_UserHasNoSurvivor_shouldThrowSurvivorNotFoundException() throws Exception {
+        UserProfile user = newUser();
+
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.findByUser(user);
+        });
+    }
+
+    @Test
     void create_CaregiverType_shouldReturnSurvivor() {
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
-        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
+    }
+
+    @Test 
+    void create_UserAlreadyHasSurvivor_shouldThrowUserAlreadyHasSurvivorException() throws Exception {
+        UserProfile user = newUser();
+        Survivor firstSurvivor = survivorService.create(user, survivorName, survivorType);
+
+        assertThrows(UserAlreadyHasSurvivorException.class, () -> {
+            survivorService.create(user, secondSurvivorName, survivorType);
+        });
+
+        assertEquals(firstSurvivor, user.getSurvivor());           // still has the first one
+        verify(repository, times(1)).save(any(Survivor.class));
     }
 
     @Test
@@ -128,8 +166,8 @@ public class SurvivorServiceTest {
 
     @Test
     void findAll_shouldReturnAllSurvivors() {
-        Survivor survivor1 = survivorService.create(survivorName, survivorType);
-        Survivor survivor2 = survivorService.create(secondSurvivorName, survivorType);
+        Survivor survivor1 = survivorService.create(newUser(), survivorName, survivorType);
+        Survivor survivor2 = survivorService.create(newUser(), secondSurvivorName, survivorType);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualSurvivors = survivorService.findAll();
@@ -140,7 +178,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
@@ -153,7 +191,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
@@ -165,7 +203,7 @@ public class SurvivorServiceTest {
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
         survivorService.removeSkill(survivorId, Skill.PsychologicalSupport);
@@ -178,7 +216,7 @@ public class SurvivorServiceTest {
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         Double overloadedItemWeight = 500000.0;
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         Item item = new Item(itemName, overloadedItemWeight);
 
         // ACT & ASSERT
@@ -193,7 +231,7 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         // ACT
         survivorService.loadItem(survivor.getId(), item);
@@ -235,11 +273,15 @@ public class SurvivorServiceTest {
 
     @Test
     void performAction_UnknownAction_shouldThrowActionNotFoundException() {
-        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
             survivorService.performAction(survivor.getId(), unknownActionId);
         });
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }
