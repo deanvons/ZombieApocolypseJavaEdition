@@ -24,6 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
@@ -137,12 +138,43 @@ class SurvivorControllerTest {
         
     }
 
+    @Test 
+    void getMySurvivor_ReturnsSurvivor() throws Exception {
+        Survivor survivor = new Survivor(expectedSurvivorName, survivorType);
+
+        when(survivorService.findByUser(user)).thenReturn(survivor);
+        
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value(expectedSurvivorName))
+            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
+    }
+
+    @Test 
+    void getMySurvivor_NoneCreated_Returns404() throws Exception {
+        int expectedStatusCode = 404;
+        String expectedErrorMessage = "Survivor Not Found";
+
+        when(survivorService.findByUser(user))
+            .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
+
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+        
+    }
+
     /** POST, PUT, DELETE requests */
     @Test
     void createSurvivor_ReturnsCreatedSurvivor() throws Exception {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
-        // SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
+        
         when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
         loginAs(KEYCLOAK_ID);
 
@@ -162,12 +194,20 @@ class SurvivorControllerTest {
 
     @Test
     void createUser_ShouldThrow409WhenAlreadyHasSurvivor () throws Exception {
-        Survivor survivor = new Survivor(survivorName, survivorType);
-        survivor.setId(survivorId);
+        int expectedStatusCode = 409;
+        String expectedErrorMessage = "This user already has a survivor";
 
-        
-        when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
+        when(survivorService.create(user, survivorName, survivorType))
+            .thenThrow(new UserAlreadyHasSurvivorException(expectedErrorMessage));
         loginAs(KEYCLOAK_ID);
+        
+        mockMvc.perform(post("/api/survivors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + survivorName
+                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
     }
 
     @Test
