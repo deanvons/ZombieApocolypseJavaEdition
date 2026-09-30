@@ -10,10 +10,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +29,7 @@ import org.mockito.quality.Strictness;
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
@@ -35,8 +39,6 @@ import no.loopacademy.models.userprofile.UserProfile;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class SurvivorServiceTest {
-    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
-
     @InjectMocks
     private SurvivorService survivorService;
     @Mock
@@ -46,7 +48,9 @@ public class SurvivorServiceTest {
     @Mock
     private AuditEntryService auditEntryService;
     @Mock
-    private UserProfileService userProfileService;
+    private UserProfileRepository userProfileRepository;
+
+    private UserProfile actor;
 
     private String survivorName;
     private String secondSurvivorName;
@@ -84,9 +88,8 @@ public class SurvivorServiceTest {
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-        when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
-                .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
         when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
+        actor = newUser();
     }
 
     @Test
@@ -99,7 +102,7 @@ public class SurvivorServiceTest {
 
     @Test
     void findById_ExistingId_shouldReturnSurvivor() {
-        Survivor expectedSurvivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor expectedSurvivor = survivorService.create(newUser(), survivorName, survivorType);
         expectedSurvivor.setId(survivorId);
 
         Survivor actualSurvivor = survivorService.findById(survivorId);
@@ -108,18 +111,48 @@ public class SurvivorServiceTest {
     }
 
     @Test
+    void findByUser_UserHasSurvivor_shouldReturnSurvivor() {
+        UserProfile user = newUser();
+        Survivor created = survivorService.create(user, survivorName, survivorType);
+
+        assertEquals(created, survivorService.findByUser(user));
+    }
+
+    @Test 
+    void findByUser_UserHasNoSurvivor_shouldThrowSurvivorNotFoundException() throws Exception {
+        UserProfile user = newUser();
+
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.findByUser(user);
+        });
+    }
+
+    @Test
     void create_CaregiverType_shouldReturnSurvivor() {
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
-        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
 
+    @Test 
+    void create_UserAlreadyHasSurvivor_shouldThrowUserAlreadyHasSurvivorException() throws Exception {
+        UserProfile user = newUser();
+        Survivor firstSurvivor = survivorService.create(user, survivorName, survivorType);
+
+        assertThrows(UserAlreadyHasSurvivorException.class, () -> {
+            survivorService.create(user, secondSurvivorName, survivorType);
+        });
+
+        assertEquals(firstSurvivor, user.getSurvivor());           // still has the first one
+        verify(repository, times(1)).save(any(Survivor.class));
+    }
+
     @Test
     void findAll_shouldReturnAllSurvivors() {
-        Survivor survivor1 = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
-        Survivor survivor2 = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor1 = survivorService.create(newUser(), survivorName, survivorType);
+        Survivor survivor2 = survivorService.create(newUser(), secondSurvivorName, survivorType);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualSurvivors = survivorService.findAll();
@@ -130,12 +163,12 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
 
-        survivorService.addSkill(KEYCLOAK_ID, survivorId, Skill.Accuracy);
+        survivorService.addSkill(actor, survivorId, Skill.Accuracy);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -143,11 +176,11 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
-        survivorService.addSkill(KEYCLOAK_ID, survivorId, Skill.FieldMedicine);
+        survivorService.addSkill(actor, survivorId, Skill.FieldMedicine);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -155,10 +188,10 @@ public class SurvivorServiceTest {
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
-        survivorService.removeSkill(KEYCLOAK_ID, survivorId, Skill.PsychologicalSupport);
+        survivorService.removeSkill(actor, survivorId, Skill.PsychologicalSupport);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -167,13 +200,13 @@ public class SurvivorServiceTest {
     @Test
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Double overloadedItemWeight = 500000.0;
+        survivorService.create(newUser(), survivorName, survivorType);
         Item item = new Item(itemName, overloadedItemWeight);
 
         // ACT & ASSERT
         assertThrows(OverloadedException.class, () -> {
-            survivorService.loadItem(KEYCLOAK_ID, this.survivorId, item);
+            survivorService.loadItem(actor, this.survivorId, item);
         });
     }
 
@@ -183,10 +216,10 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         // ACT
-        survivorService.loadItem(KEYCLOAK_ID, survivor.getId(), item);
+        survivorService.loadItem(actor, survivor.getId(), item);
         List<Item> actualGear = survivor.getGear();
 
         // ASSERT
@@ -196,14 +229,14 @@ public class SurvivorServiceTest {
     @Test
     void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.addSkill(KEYCLOAK_ID, unknownSurvivorId, Skill.Cooking);
+            survivorService.addSkill(actor, unknownSurvivorId, Skill.Cooking);
         });
     }
 
     @Test
     void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.removeSkill(KEYCLOAK_ID, unknownSurvivorId, Skill.Cooking);
+            survivorService.removeSkill(actor, unknownSurvivorId, Skill.Cooking);
         });
     }
 
@@ -212,24 +245,28 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.loadItem(KEYCLOAK_ID, unknownSurvivorId, item);
+            survivorService.loadItem(actor, unknownSurvivorId, item);
         });
     }
 
     @Test
     void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.performAction(KEYCLOAK_ID, unknownSurvivorId, actionId);
+            survivorService.performAction(actor, unknownSurvivorId, actionId);
         });
     }
 
     @Test
     void performAction_UnknownAction_shouldThrowActionNotFoundException() {
-        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
-            survivorService.performAction(KEYCLOAK_ID, survivor.getId(), unknownActionId);
+            survivorService.performAction(actor, survivor.getId(), unknownActionId);
         });
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }

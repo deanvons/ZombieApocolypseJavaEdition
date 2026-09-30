@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,19 +18,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.config.authConfig;
-import no.loopacademy.dtos.request.ItemLoadRequest;
-import no.loopacademy.dtos.response.ItemResponse;
-import no.loopacademy.dtos.response.SurvivorResponse;
-import no.loopacademy.mappers.ItemMapper;
-import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
@@ -39,19 +34,22 @@ import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({ SurvivorMapperImpl.class, ItemMapperImpl.class, authConfig.class }) // real MapStruct mappers, so the JSON
 class SurvivorControllerTest {
-    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
+    private static final String KEYCLOAK_ID = "test-user";
     private String survivorName;
     private String expectedSurvivorName;
     private SurvivorType survivorType;
     private String expectedSurvivorTypeString;
     private Long survivorId;
     private Long actionId;
+    private UserProfile user;
 
     private String itemMedkit;
     private Double itemMedkitWeight;
@@ -62,11 +60,10 @@ class SurvivorControllerTest {
 
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
-    
-    @AfterEach
-    void clearSecurityContext() { // Clear jwt token before each test
-        SecurityContextHolder.clearContext();
-    }
+
+    @MockitoBean
+    private UserProfileService userProfileService; //looks up the logged-in player's profile
+
 
     @BeforeEach
     void setup() {
@@ -76,6 +73,10 @@ class SurvivorControllerTest {
         expectedSurvivorTypeString = survivorType.name();
         survivorId = 1L;
         actionId = 2L;
+
+        // The logged-in player (see loginAs) and their profile
+        user = new UserProfile(KEYCLOAK_ID, "tester");
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(user);
 
         itemMedkit = "Medkit";
         itemMedkitWeight = 2.5;
@@ -139,18 +140,45 @@ class SurvivorControllerTest {
         
     }
 
+    @Test 
+    void getMySurvivor_ReturnsSurvivor() throws Exception {
+        Survivor survivor = new Survivor(expectedSurvivorName, survivorType);
+
+        when(survivorService.findByUser(user)).thenReturn(survivor);
+        
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value(expectedSurvivorName))
+            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
+    }
+
+    @Test 
+    void getMySurvivor_NoneCreated_Returns404() throws Exception {
+        int expectedStatusCode = 404;
+        String expectedErrorMessage = "Survivor Not Found";
+
+        when(survivorService.findByUser(user))
+            .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
+
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+        
+    }
+
     /** POST, PUT, DELETE requests */
     @Test
     void createSurvivor_ReturnsCreatedSurvivor() throws Exception {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
-        when(survivorService.create(KEYCLOAK_ID, survivorName, survivorType)).thenReturn(survivor);
 
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "none")
-                .subject(KEYCLOAK_ID)
-                .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+        when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -162,7 +190,26 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.name").value(survivorName))
                 .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
-        verify(survivorService).create(KEYCLOAK_ID, survivorName, survivorType);
+        verify(survivorService).create(user, expectedSurvivorName, survivorType);
+    }
+
+
+    @Test
+    void createSurvivor_AlreadyHasSurvivor_Returns409() throws Exception {
+        int expectedStatusCode = 409;
+        String expectedErrorMessage = "This user already has a survivor";
+
+        when(survivorService.create(user, survivorName, survivorType))
+            .thenThrow(new UserAlreadyHasSurvivorException(expectedErrorMessage));
+        loginAs(KEYCLOAK_ID);
+        
+        mockMvc.perform(post("/api/survivors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + survivorName
+                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
     }
 
     @Test
@@ -170,11 +217,7 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "none")
-                .subject(KEYCLOAK_ID)
-                .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors/" + survivorId + "/skills")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -182,22 +225,18 @@ class SurvivorControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).addSkill(KEYCLOAK_ID, survivorId, Skill.Accuracy);
+        verify(survivorService).addSkill(user, survivorId, Skill.Accuracy);
         verify(survivorService).findById(survivorId);
     }
 
     @Test
     void deleteSurvivorSkill_RemovesSkillFromSurvivor() throws Exception {
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "none")
-                .subject(KEYCLOAK_ID)
-                .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(delete("/api/survivors/" + survivorId + "/skills/PsychologicalSupport"))
                 .andExpect(status().isNoContent());
 
-        verify(survivorService).removeSkill(KEYCLOAK_ID, survivorId, Skill.PsychologicalSupport);
+        verify(survivorService).removeSkill(user, survivorId, Skill.PsychologicalSupport);
     }
 
     @Test
@@ -208,11 +247,7 @@ class SurvivorControllerTest {
         Tool medkit = new Tool(itemMedkit, itemMedkitWeight, itemMedkitDurability);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "none")
-                .subject(KEYCLOAK_ID)
-                .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors/" + survivorId + "/items")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -222,20 +257,16 @@ class SurvivorControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).loadItem(KEYCLOAK_ID, survivorId, medkit);
+        verify(survivorService).loadItem(user, survivorId, medkit);
     }
 
     @Test
     void performAction_ReturnsActionEffectiveness() throws Exception {
         double expectedEffectiveness = 72.5;
         ActionResult result = new ActionResult(null, null, expectedEffectiveness);
-        when(survivorService.performAction(KEYCLOAK_ID, survivorId, actionId)).thenReturn(result);
+        when(survivorService.performAction(user, survivorId, actionId)).thenReturn(result);
 
-        Jwt jwt = Jwt.withTokenValue("test-token")
-                .header("alg", "none")
-                .subject(KEYCLOAK_ID)
-                .build();
-        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors/" + survivorId + "/actions/" + actionId))
                 .andExpect(status().isOk())
@@ -243,7 +274,17 @@ class SurvivorControllerTest {
                 .andExpect(jsonPath("$.actionId").value(actionId))
                 .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
-        verify(survivorService).performAction(KEYCLOAK_ID, survivorId, actionId);
+        verify(survivorService).performAction(user, survivorId, actionId);
     }
 
+    // Security filters are off in this class (addFilters = false), so jwt() from spring-security-test
+    // never reaches @AuthenticationPrincipal. Put the token straight into the security context instead;
+    // spring-security-test clears it after each test.
+    private void loginAs(String keycloakId) {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+            .header("alg", "none")
+            .subject(keycloakId)
+            .build();
+        TestSecurityContextHolder.setAuthentication(new JwtAuthenticationToken(jwt));
+    }
 }

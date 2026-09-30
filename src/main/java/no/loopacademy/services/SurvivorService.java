@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.audit.AuditActionType;
@@ -19,28 +20,41 @@ import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 
 @Service
 public class SurvivorService {
 
     private final SurvivorRepository survivorRepository;
     private final ActionRepository actionRepository;
-    private final UserProfileService userProfileService;
+    private final UserProfileRepository userProfileRepository;
     private final AuditEntryService auditEntryService;
 
-    public SurvivorService(SurvivorRepository survivorRepository, ActionRepository actionRepository,
-            UserProfileService userProfileService, AuditEntryService auditEntryService) {
+    public SurvivorService(
+        SurvivorRepository survivorRepository,
+        ActionRepository actionRepository,
+        UserProfileRepository userProfileRepository,
+        AuditEntryService auditEntryService
+    ) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
-        this.userProfileService = userProfileService;
+        this.userProfileRepository = userProfileRepository;
         this.auditEntryService = auditEntryService;
     }
 
+    // The controller looks up the user (from the JWT) and passes it in.
+    // The user comes from an earlier transaction, so Hibernate no longer tracks it:
+    // it has to be saved explicitly for the new survivor_id to be written.
     @Transactional
-    public Survivor create(String keycloakId, String name, SurvivorType type) {
-        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+    public Survivor create(UserProfile user, String name, SurvivorType type) {
+        if (user.hasSurvivor()) {
+            throw new UserAlreadyHasSurvivorException("This user already has a survivor");
+        } //409 error
+
         Survivor survivor = survivorRepository.save(new Survivor(name, type));
-        auditEntryService.create(actor, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
+        user.setSurvivor(survivor);
+        userProfileRepository.save(user);
+        auditEntryService.create(user, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
                 "Created " + type + " survivor " + name);
         return survivor;
     }
@@ -59,6 +73,16 @@ public class SurvivorService {
         return survivor;
     }
 
+    // user.getSurvivor() is a lazy placeholder from an earlier transaction and can't be loaded here,
+    // so look the survivor up again by id (reading the id doesn't need the placeholder to load).
+    @Transactional(readOnly = true)
+    public Survivor findByUser(UserProfile user) {
+        if (!user.hasSurvivor()) {
+            throw new SurvivorNotFoundException("No survivor found for user");
+        }
+        return findById(user.getSurvivor().getId()); //Also loads skills and gear before transaction ends.
+    }
+
     // open-in-view is off, so lazy collections must be loaded before the transaction ends,
     // otherwise mapping to a DTO in the controller throws LazyInitializationException
     private void initializeCollections(Survivor survivor) {
@@ -67,8 +91,7 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void addSkill(String keycloakId, Long id, Skill skill) {
-        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+    public void addSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (!survivor.getSkills().contains(skill)) {
@@ -79,8 +102,7 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void removeSkill(String keycloakId, Long id, Skill skill) {
-        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+    public void removeSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (survivor.getSkills().contains(skill)) {
@@ -91,8 +113,7 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void loadItem(String keycloakId, Long id, Item item) {
-        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+    public void loadItem(UserProfile actor, Long id, Item item) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         double currentLoad = survivor.getGear().stream()
@@ -108,8 +129,7 @@ public class SurvivorService {
     }
 
     @Transactional
-    public ActionResult performAction(String keycloakId, Long id, Long actionId) {
-        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+    public ActionResult performAction(UserProfile actor, Long id, Long actionId) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         Action action = actionRepository.findById(actionId)

@@ -1,14 +1,13 @@
 package no.loopacademy.models.actions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 
 import no.loopacademy.services.ActionService;
 import no.loopacademy.services.AuditEntryService;
 import no.loopacademy.services.SurvivorService;
-import no.loopacademy.services.UserProfileService;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +36,6 @@ import no.loopacademy.models.userprofile.UserProfile;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ActionTests {
-    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
-
     @InjectMocks
     private SurvivorService survivorService;
     @Mock
@@ -47,7 +44,7 @@ public class ActionTests {
     @Mock
     private ActionRepository actionRepository;
     @Mock
-    private UserProfileService userProfileService;
+    private UserProfileRepository userProfileRepository;
     @Mock
     private AuditEntryService auditEntryService;
 
@@ -83,9 +80,7 @@ public class ActionTests {
                 action(4L, "Build Shelter", ActionType.Build, weights(0.4, 0.1, 0.0, 0.2, 0.1, 0.2, 0.0)),
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
-        when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
-        when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
-                .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
+        when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
 
     }
 
@@ -126,11 +121,12 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        UserProfile user = newUser();
+        survivorService.create(user, survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
-        double actualEffectiveness = survivorService.performAction(KEYCLOAK_ID, survivorId, actionId).score();
+        double actualEffectiveness = survivorService.performAction(user, survivorId, actionId).score();
 
         assertEquals(expectedEffectiveness, actualEffectiveness);
     }
@@ -162,4 +158,8 @@ public class ActionTests {
         return weights;
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }
