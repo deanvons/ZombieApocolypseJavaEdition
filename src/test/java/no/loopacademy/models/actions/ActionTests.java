@@ -7,6 +7,7 @@ import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,10 @@ import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
-import no.loopacademy.services.UserProfileService;
 
 public class ActionTests {
-    private static final String KEYCLOAK_ID = "test-user";
     private SurvivorService survivorService;
-    private UserProfileService userProfileService;
+    private UserProfileRepository userProfileRepository;
     private SurvivorRepository repository;
     private ActionService actionService;
     private ActionRepository actionRepository;
@@ -72,12 +71,9 @@ public class ActionTests {
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
         when(actionRepository.getReferenceById(primaryActionId)).thenReturn(actions.getFirst());
 
-        // Fresh profile per call, so tests that create several survivors don't hit the one-survivor rule
-        userProfileService = mock(UserProfileService.class);
-        when(userProfileService.findByKeycloakId(any()))
-                .thenAnswer(invocation -> new UserProfile(KEYCLOAK_ID, "tester"));
+        userProfileRepository = mock(UserProfileRepository.class);
 
-        survivorService = new SurvivorService(repository, actionRepository, userProfileService);
+        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
 
         actionService = new ActionService(actionRepository);
 
@@ -120,7 +116,7 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
@@ -156,4 +152,8 @@ public class ActionTests {
         return weights;
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }

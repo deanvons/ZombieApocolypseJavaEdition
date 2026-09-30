@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,13 +22,11 @@ import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
-import no.loopacademy.services.UserProfileService;
 import no.loopacademy.services.SurvivorService;
 
 public class ItemTests {
-    private static final String KEYCLOAK_ID = "test-user";
     private SurvivorService survivorService;
-    private UserProfileService userProfileService;
+    private UserProfileRepository userProfileRepository;
     private ActionRepository actionRepository;
     private String survivorName;
     private SurvivorType survivorType;
@@ -65,12 +64,9 @@ public class ItemTests {
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
-        // Fresh profile per call, so tests that create several survivors don't hit the one-survivor rule
-        userProfileService = mock(UserProfileService.class);
-        when(userProfileService.findByKeycloakId(any()))
-                .thenAnswer(invocation -> new UserProfile(KEYCLOAK_ID, "tester"));
+        userProfileRepository = mock(UserProfileRepository.class);
 
-        survivorService = new SurvivorService(repository, actionRepository, userProfileService);
+        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
     }
 
     @Test
@@ -131,7 +127,7 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         int expectedGearItemCount = 1;
         // Act
@@ -143,7 +139,7 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage);
         int expectedGearItemCount = 2;
@@ -157,7 +153,7 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
         Double overloadedToolWeight = 100.0;
         Tool tool = new Tool(toolName, overloadedToolWeight, toolDurability);
         // Act & assert
@@ -167,7 +163,7 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Double overloadedWeaponWeight = 10.0;
         Weapon weapon = new Weapon(weaponName, overloadedWeaponWeight, weaponDamage); // Too heavy
@@ -176,4 +172,8 @@ public class ItemTests {
         assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), weapon));
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }

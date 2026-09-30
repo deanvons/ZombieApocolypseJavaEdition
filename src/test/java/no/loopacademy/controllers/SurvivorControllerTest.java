@@ -31,7 +31,9 @@ import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -44,6 +46,7 @@ class SurvivorControllerTest {
     private String expectedSurvivorTypeString;
     private Long survivorId;
     private Long actionId;
+    private UserProfile user;
 
     private String itemMedkit;
     private Double itemMedkitWeight;
@@ -55,6 +58,9 @@ class SurvivorControllerTest {
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
 
+    @MockitoBean
+    private UserProfileService userProfileService; //looks up the logged-in player's profile
+
 
     @BeforeEach
     void setup(){
@@ -64,6 +70,10 @@ class SurvivorControllerTest {
         expectedSurvivorTypeString = survivorType.name();
         survivorId = 1L;
         actionId = 2L;
+
+        // The logged-in player (see loginAs) and their profile
+        user = new UserProfile(KEYCLOAK_ID, "tester");
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(user);
 
         itemMedkit = "Medkit";
         itemMedkitWeight = 2.5;
@@ -133,7 +143,7 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
         // SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
-        when(survivorService.create(KEYCLOAK_ID, survivorName, survivorType)).thenReturn(survivor);
+        when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
         loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors")
@@ -146,7 +156,18 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.name").value(survivorName))
             .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
-        verify(survivorService).create(KEYCLOAK_ID, expectedSurvivorName, survivorType);
+        verify(survivorService).create(user, expectedSurvivorName, survivorType);
+    }
+
+
+    @Test
+    void createUser_ShouldThrow409WhenAlreadyHasSurvivor () throws Exception {
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        survivor.setId(survivorId);
+
+        
+        when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
+        loginAs(KEYCLOAK_ID);
     }
 
     @Test

@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,9 +28,8 @@ import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 
 public class SurvivorServiceTest {
-    private static final String KEYCLOAK_ID = "test-user";
     private SurvivorService survivorService;
-    private UserProfileService userProfileService;
+    private UserProfileRepository userProfileRepository;
     private SurvivorRepository repository;
     private ActionRepository actionRepository;
     private String survivorName;
@@ -67,12 +67,9 @@ public class SurvivorServiceTest {
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
-        // Fresh profile per call, so tests that create several survivors don't hit the one-survivor rule
-        userProfileService = mock(UserProfileService.class);
-        when(userProfileService.findByKeycloakId(any()))
-                .thenAnswer(invocation -> new UserProfile(KEYCLOAK_ID, "tester"));
+        userProfileRepository = mock(UserProfileRepository.class);
 
-        survivorService = new SurvivorService(repository, actionRepository, userProfileService);
+        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
     }
 
     @Test
@@ -85,7 +82,7 @@ public class SurvivorServiceTest {
 
     @Test
     void findById_ExistingId_shouldReturnSurvivor() {
-        Survivor expectedSurvivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor expectedSurvivor = survivorService.create(newUser(), survivorName, survivorType);
         expectedSurvivor.setId(survivorId);
 
         Survivor actualSurvivor = survivorService.findById(survivorId);
@@ -97,15 +94,15 @@ public class SurvivorServiceTest {
     void create_CaregiverType_shouldReturnSurvivor() {
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
-        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
 
     @Test
     void findAll_shouldReturnAllSurvivors() {
-        Survivor survivor1 = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
-        Survivor survivor2 = survivorService.create(KEYCLOAK_ID, secondSurvivorName, survivorType);
+        Survivor survivor1 = survivorService.create(newUser(), survivorName, survivorType);
+        Survivor survivor2 = survivorService.create(newUser(), secondSurvivorName, survivorType);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualSurvivors = survivorService.findAll();
@@ -116,7 +113,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
@@ -129,7 +126,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
@@ -141,7 +138,7 @@ public class SurvivorServiceTest {
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
         survivorService.removeSkill(survivorId, Skill.PsychologicalSupport);
@@ -154,7 +151,7 @@ public class SurvivorServiceTest {
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         Double overloadedItemWeight = 500000.0;
-        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         Item item = new Item(itemName, overloadedItemWeight);
 
         // ACT & ASSERT
@@ -169,7 +166,7 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
+        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         // ACT
         survivorService.loadItem(survivor.getId(), item);
@@ -179,4 +176,8 @@ public class SurvivorServiceTest {
         assertEquals(expectedGearList, actualGear);
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }
