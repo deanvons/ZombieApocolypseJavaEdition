@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
@@ -97,12 +100,42 @@ public class SurvivorServiceTest {
     }
 
     @Test
+    void findByUser_UserHasSurvivor_shouldReturnSurvivor() {
+        UserProfile user = newUser();
+        Survivor created = survivorService.create(user, survivorName, survivorType);
+
+        assertEquals(created, survivorService.findByUser(user));
+    }
+
+    @Test 
+    void findByUser_UserHasNoSurvivor_shouldThrowSurvivorNotFoundException() throws Exception {
+        UserProfile user = newUser();
+
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.findByUser(user);
+        });
+    }
+
+    @Test
     void create_CaregiverType_shouldReturnSurvivor() {
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
         Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
+    }
+
+    @Test 
+    void create_UserAlreadyHasSurvivor_shouldThrowUserAlreadyHasSurvivorException() throws Exception {
+        UserProfile user = newUser();
+        Survivor firstSurvivor = survivorService.create(user, survivorName, survivorType);
+
+        assertThrows(UserAlreadyHasSurvivorException.class, () -> {
+            survivorService.create(user, secondSurvivorName, survivorType);
+        });
+
+        assertEquals(firstSurvivor, user.getSurvivor());           // still has the first one
+        verify(repository, times(1)).save(any(Survivor.class));
     }
 
     @Test
