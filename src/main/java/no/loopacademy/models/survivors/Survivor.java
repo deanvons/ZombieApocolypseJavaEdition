@@ -62,10 +62,21 @@ public class Survivor {
     }
 
     public void load(Item item) {
-        gear.add(item);
+        double currentMaxLoadCapacity = getMaxLoad();
+        double currentLoad = 0;
+
+        for (Item i : gear) {
+            currentLoad += i.getWeight();
+        }
+
+        if (currentLoad + item.getWeight() > currentMaxLoadCapacity) {
+            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
+        } else {
+            gear.add(item);
+        }
     }
 
-    public double getMaxLoad() {
+    private double getMaxLoad() {
         return 10 + attributes.getStrength() * 3;
     }
 
