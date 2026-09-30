@@ -3,20 +3,28 @@ package no.loopacademy.models.survivors;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.skills.Skill;
 
 public class SurvivorTests {
+    private String survivorName;
+    private SurvivorType survivorType;
+
+    @BeforeEach
+    void setup() {
+        survivorName = "GenericSurvivorName";
+        survivorType = SurvivorType.CAREGIVER;
+    }
 
     @Test
     void caregiverShouldBeCreatedWithCorrectName() {
         // Arrange
-        String expectedName = "Melvin";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        String expectedName = survivorName;
         // Act
-        Survivor c = new Survivor(expectedName, survivorType);
+        Survivor c = new Survivor(survivorName, survivorType);
         String actualName = c.getName();
         // Assert
         assertEquals(expectedName, actualName);
@@ -35,8 +43,6 @@ public class SurvivorTests {
         expectedAttributes.setTrustworthiness(8);
 
         // Act
-        String survivorName = "John";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
         Survivor john = new Survivor(survivorName, survivorType);
         SurvivorAttributes actualAttributes = john.getAttributes();
 
@@ -47,8 +53,6 @@ public class SurvivorTests {
     @Test
     void caregiverShouldBeCreatedWithCorrectSkills() {
 
-        String survivorName = "John";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
         Survivor john = new Survivor(survivorName, survivorType);
         List<Skill> expectedSkills = List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking);
         List<Skill> actualSkills = john.getSkills();

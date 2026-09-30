@@ -25,30 +25,31 @@ class UserProfileServiceTest {
 
     private UserProfileRepository repository;
     private UserProfileService service;
+    private String displayName;
 
     @BeforeEach
     void setUp() {
+        displayName = "GenericDisplayName";
         repository = mock(UserProfileRepository.class);
         service = new UserProfileService(repository);
     }
 
     @Test
     void createShouldSaveNewProfile() {
-        String expectedDisplayName = "rick";
         when(repository.existsByKeycloakId(KEYCLOAK_ID)).thenReturn(false);
         when(repository.saveAndFlush(any(UserProfile.class))).thenAnswer(call -> call.getArgument(0));
 
-        UserProfile profile = service.create(KEYCLOAK_ID, expectedDisplayName);
+        UserProfile profile = service.create(KEYCLOAK_ID, displayName);
 
         assertEquals(KEYCLOAK_ID, profile.getKeycloakId());
-        assertEquals(expectedDisplayName, profile.getDisplayName());
+        assertEquals(displayName, profile.getDisplayName());
     }
 
     @Test
     void createWhenProfileExistsShouldThrowConflict() {
         when(repository.existsByKeycloakId(KEYCLOAK_ID)).thenReturn(true);
 
-        assertThrows(ResourceConflictException.class, () -> service.create(KEYCLOAK_ID, "rick"));
+        assertThrows(ResourceConflictException.class, () -> service.create(KEYCLOAK_ID, displayName));
         verify(repository, never()).saveAndFlush(any());
     }
 
@@ -59,12 +60,12 @@ class UserProfileServiceTest {
         when(repository.saveAndFlush(any(UserProfile.class)))
             .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-        assertThrows(ResourceConflictException.class, () -> service.create(KEYCLOAK_ID, "rick"));
+        assertThrows(ResourceConflictException.class, () -> service.create(KEYCLOAK_ID, displayName));
     }
 
     @Test
     void findByKeycloakIdShouldReturnProfile() {
-        UserProfile profile = new UserProfile(KEYCLOAK_ID, "rick");
+        UserProfile profile = new UserProfile(KEYCLOAK_ID, displayName);
         when(repository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(profile));
 
         assertEquals(profile, service.findByKeycloakId(KEYCLOAK_ID));
