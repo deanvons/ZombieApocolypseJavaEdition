@@ -25,21 +25,26 @@ import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 @RestController
 @RequestMapping("/api/survivors")
 public class SurvivorController {
 
     private final SurvivorService survivorService;
+    private final UserProfileService userProfileService;
     private final SurvivorMapper survivorMapper;
     private final ItemMapper itemMapper;
 
     public SurvivorController(
         SurvivorService survivorService,
+        UserProfileService userProfileService,
         SurvivorMapper survivorMapper,
         ItemMapper itemMapper
     ) {
         this.survivorService = survivorService;
+        this.userProfileService = userProfileService;
         this.survivorMapper = survivorMapper;
         this.itemMapper = itemMapper;
     }
@@ -53,7 +58,8 @@ public class SurvivorController {
     public ResponseEntity<SurvivorResponse> createSurvivor(@AuthenticationPrincipal Jwt jwt,
         @Valid @RequestBody SurvivorCreateRequest request
     ) {
-        Survivor survivor = survivorService.create(jwt.getSubject(), request.name(), survivorMapper.toSurvivorType(request.type()));
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); //404 if no profile
+        Survivor survivor = survivorService.create(user, request.name(), survivorMapper.toSurvivorType(request.type()));
         return ResponseEntity
             .created(URI.create("/api/survivors/" + survivor.getId()))
             .body(survivorMapper.toResponse(survivor));
@@ -67,7 +73,8 @@ public class SurvivorController {
 
     @GetMapping("/me")
     public ResponseEntity<SurvivorResponse> getMySurvivor(@AuthenticationPrincipal Jwt jwt) {
-        Survivor survivor = survivorService.findByKeycloakId(jwt.getSubject());
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); //404 if no profile
+        Survivor survivor = survivorService.findByUser(user);
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
     }
 

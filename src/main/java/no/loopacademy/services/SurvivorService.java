@@ -17,6 +17,7 @@ import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 
 @Service
 public class SurvivorService {
@@ -24,28 +25,30 @@ public class SurvivorService {
     private final SurvivorRepository survivorRepository;
     private final ActionRepository actionRepository;
 
-    private final UserProfileService userProfileService;
+    private final UserProfileRepository userProfileRepository;
 
     public SurvivorService(
         SurvivorRepository survivorRepository, 
         ActionRepository actionRepository,
-        UserProfileService userProfileService
+        UserProfileRepository userProfileRepository
     ) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
-        this.userProfileService = userProfileService;
+        this.userProfileRepository = userProfileRepository;
     }
 
+    // The controller looks up the user (from the JWT) and passes it in.
+    // The user comes from an earlier transaction, so Hibernate no longer tracks it:
+    // it has to be saved explicitly for the new survivor_id to be written.
     @Transactional
-    public Survivor create(String keycloakId, String name, SurvivorType type) {
-        UserProfile user = this.userProfileService.findByKeycloakId(keycloakId); //UserProfileNotFoundException if no user (404)
-        
+    public Survivor create(UserProfile user, String name, SurvivorType type) {
         if (user.hasSurvivor()) {
             throw new UserAlreadyHasSurvivorException("This user already has a survivor");
         } //409 error
 
         Survivor survivor = survivorRepository.save(new Survivor(name, type));
         user.setSurvivor(survivor);
+        userProfileRepository.save(user);
         return survivor;
     }
 
@@ -63,18 +66,15 @@ public class SurvivorService {
         return survivor;
     }
 
+    // user.getSurvivor() is a lazy placeholder from an earlier transaction and can't be loaded here,
+    // so look the survivor up again by id (reading the id doesn't need the placeholder to load).
     @Transactional(readOnly = true)
-    public Survivor findByKeycloakId(String keycloakId) {
-        UserProfile user = this.userProfileService.findByKeycloakId(keycloakId); //UserProfileNotFoundException if no user (404)
-
+    public Survivor findByUser(UserProfile user) {
         if (!user.hasSurvivor()) {
             throw new SurvivorNotFoundException("No survivor found for user");
         }
-
-        Survivor survivor = user.getSurvivor();
-        initializeCollections(survivor); //Loads skills and gear before transaction ends.
-        return survivor;
-	}
+        return findById(user.getSurvivor().getId()); //Also loads skills and gear before transaction ends.
+    }
 
     // open-in-view is off, so lazy collections must be loaded before the transaction ends,
     // otherwise mapping to a DTO in the controller throws LazyInitializationException
