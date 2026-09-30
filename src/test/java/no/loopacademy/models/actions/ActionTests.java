@@ -116,7 +116,9 @@ public class ActionTests {
     }
 
     private Action action(Long id, String name, ActionType type, AttributeWeights weights) {
-        Action action = new Action(name, type, "", "", weights);
+        String actionEffect = "";
+        String actionTarget = "";
+        Action action = new Action(name, type, actionEffect, actionTarget, weights);
         action.setId(id);
         return action;
     }

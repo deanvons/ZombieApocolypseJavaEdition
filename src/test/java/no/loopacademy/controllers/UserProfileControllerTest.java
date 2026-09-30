@@ -48,14 +48,15 @@ class UserProfileControllerTest {
 
     @Test
     void getMyProfileShouldLookUpByTokenSubject() throws Exception {
+        String expectedDisplayName = "rick";
         UserProfile profile = new UserProfile(KEYCLOAK_ID, "rick");
         when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
-            .thenReturn(new UserProfileResponse(1L, "rick", Instant.now(), null));
+            .thenReturn(new UserProfileResponse(1L, expectedDisplayName, Instant.now(), null));
 
         mockMvc.perform(get("/api/profiles/me").with(jwt().jwt(j -> j.subject(KEYCLOAK_ID))))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.displayName").value("rick"))
+            .andExpect(jsonPath("$.displayName").value(expectedDisplayName))
             .andExpect(jsonPath("$.survivorId").isEmpty());
     }
 
@@ -70,16 +71,18 @@ class UserProfileControllerTest {
 
     @Test
     void createMyProfileShouldUseSubjectAndUsernameFromToken() throws Exception {
+        String expectedDisplayName = "rick";
+        String expectedLocation = "/api/profiles/me";
         UserProfile profile = new UserProfile(KEYCLOAK_ID, "rick");
-        when(userProfileService.create(KEYCLOAK_ID, "rick")).thenReturn(profile);
+        when(userProfileService.create(KEYCLOAK_ID, expectedDisplayName)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
             .thenReturn(new UserProfileResponse(1L, "rick", Instant.now(), null));
 
         mockMvc.perform(post("/api/profiles/me")
-                .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", "rick"))))
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", expectedDisplayName))))
             .andExpect(status().isCreated())
-            .andExpect(header().string("Location", "/api/profiles/me"))
-            .andExpect(jsonPath("$.displayName").value("rick"));
+            .andExpect(header().string("Location", expectedLocation))
+            .andExpect(jsonPath("$.displayName").value(expectedDisplayName));
     }
 
     @Test

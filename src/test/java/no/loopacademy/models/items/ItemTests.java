@@ -89,10 +89,18 @@ public class ItemTests {
     @Test
     void shouldCreateSurvivorWithCorrectItems() {
         // Arrange
-        Survivor john = new Survivor("John", SurvivorType.CAREGIVER);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = new Survivor(survivorName, survivorType);
         List<Item> expectedItems = new ArrayList<>();
-        expectedItems.add(new Tool("Spanner", 10.0, 100));
-        expectedItems.add(new Weapon("AK-47", 5.0, 10));
+        String toolName = "Spanner";
+        Double toolWeight = 10.0;
+        double toolDurability = 100;
+        expectedItems.add(new Tool(toolName, toolWeight, toolDurability));
+        String weaponName = "AK-47";
+        Double weaponWeight = 5.0;
+        double weaponDamage = 10;
+        expectedItems.add(new Weapon(weaponName, weaponWeight, weaponDamage));
 
         // Act
         john.setGear(expectedItems);
@@ -105,32 +113,52 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
-        Tool tool = new Tool("Spanner", 10.0, 100);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = survivorService.create(survivorName, survivorType);
+        String toolName = "Spanner";
+        Double toolWeight = 10.0;
+        double toolDurability = 100;
+        Tool tool = new Tool(toolName, toolWeight, toolDurability);
+        int expectedGearItemCount = 1;
         // Act
         survivorService.loadItem(john.getId(), tool);
         // Assert - to check if he has it equipped
-        assertEquals(1, john.getGear().size());
+        assertEquals(expectedGearItemCount, john.getGear().size());
     }
 
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
-        Tool tool = new Tool("Spanner", 10.0, 100);
-        Weapon weapon = new Weapon("AK-47", 5.0, 10);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = survivorService.create(survivorName, survivorType);
+        String toolName = "Spanner";
+        Double toolWeight = 10.0;
+        double toolDurability = 100;
+        Tool tool = new Tool(toolName, toolWeight, toolDurability);
+        String weaponName = "AK-47";
+        Double weaponWeight = 5.0;
+        double weaponDamage = 10;
+        Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage);
+        int expectedGearItemCount = 2;
         // Act
         survivorService.loadItem(john.getId(), tool);
         survivorService.loadItem(john.getId(), weapon);
         // Assert - to check if he has it equipped
-        assertEquals(2, john.getGear().size());
+        assertEquals(expectedGearItemCount, john.getGear().size());
     }
 
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
-        Tool tool = new Tool("Spanner", 100.0, 100);
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = survivorService.create(survivorName, survivorType);
+        String toolName = "Spanner";
+        Double toolWeight = 100.0;
+        double toolDurability = 100;
+        Tool tool = new Tool(toolName, toolWeight, toolDurability);
         // Act & assert
         assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), tool));
     }
@@ -138,9 +166,17 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        Survivor john = survivorService.create("John", SurvivorType.CAREGIVER);
-        Tool tool = new Tool("Spanner", 10.0, 100);
-        Weapon weapon = new Weapon("AK-47", 10.0, 10); // Too heavy
+        String survivorName = "John";
+        SurvivorType survivorType = SurvivorType.CAREGIVER;
+        Survivor john = survivorService.create(survivorName, survivorType);
+        String toolName = "Spanner";
+        Double toolWeight = 10.0;
+        double toolDurability = 100;
+        Tool tool = new Tool(toolName, toolWeight, toolDurability);
+        String weaponName = "AK-47";
+        Double weaponWeight = 10.0;
+        double weaponDamage = 10;
+        Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage); // Too heavy
         // Act & assert
         survivorService.loadItem(john.getId(), tool);
         assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), weapon));
