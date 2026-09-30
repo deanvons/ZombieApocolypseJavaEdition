@@ -15,12 +15,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-
-import no.loopacademy.exceptions.OverloadedException;
+import jakarta.persistence.OneToOne;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
+import no.loopacademy.models.userprofile.UserProfile;
 
 @Entity
 public class Survivor {
@@ -31,6 +31,9 @@ public class Survivor {
 
     @Column(nullable = false, unique = true)
     private String name;
+
+    @OneToOne(mappedBy = "survivor")
+    private UserProfile user;
 
     @Column(nullable = false)
     @ElementCollection(targetClass = Skill.class)
@@ -99,6 +102,16 @@ public class Survivor {
 
     public void setName(String name) {
         this.name = name;
+    }
+    
+    public UserProfile getUser() {
+        return user;
+    }
+
+    //Calling this directly changes nothing in the database, because only UserProfile.survivor is saved. 
+    //Set survivor.user via UserProfile.setSurvivor instead.
+    public void setUser(UserProfile user) {
+        this.user = user;
     }
 
     public List<Skill> getSkills() {
