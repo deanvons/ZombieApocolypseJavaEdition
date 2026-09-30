@@ -74,9 +74,8 @@ classDiagram
         -List~Item~ gear
         -SurvivorAttributes attributes
         -SurvivorType type
-        +load(Item item) void
         +performAction(Action action) double
-        -getMaxLoad() double
+        +getMaxLoad() double
     }
 
     class SurvivorType {
