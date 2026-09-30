@@ -41,7 +41,7 @@ public class SurvivorService {
         UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
         Survivor survivor = survivorRepository.save(new Survivor(name, type));
         auditEntryService.create(actor, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
-                "Created " + type + ", survivor " + name);
+                "Created " + type + " survivor " + name);
         return survivor;
     }
 
@@ -67,23 +67,32 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void addSkill(Long id, Skill skill) {
+    public void addSkill(String keycloakId, Long id, Skill skill) {
+        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (!survivor.getSkills().contains(skill)) {
             survivor.getSkills().add(skill);
+            auditEntryService.create(actor, AuditActionType.SKILL_ADDED, "Survivor", id,
+                    "Skill " + skill.name() + " added to survivor " + survivor.getName());
         }
     }
 
     @Transactional
-    public void removeSkill(Long id, Skill skill) {
+    public void removeSkill(String keycloakId, Long id, Skill skill) {
+        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
-        survivor.getSkills().remove(skill);
+        if (survivor.getSkills().contains(skill)) {
+            survivor.getSkills().remove(skill);
+            auditEntryService.create(actor, AuditActionType.SKILL_REMOVED, "Survivor", id,
+                    "Skill " + skill.name() + " removed from survivor " + survivor.getName());
+        }
     }
 
     @Transactional
-    public void loadItem(Long id, Item item) {
+    public void loadItem(String keycloakId, Long id, Item item) {
+        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         double currentLoad = survivor.getGear().stream()
@@ -94,11 +103,13 @@ public class SurvivorService {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
         survivor.getGear().add(item);
-
+        auditEntryService.create(actor, AuditActionType.ITEM_LOADED, "Survivor", id,
+                "Item " + item.getName() + " loaded to survivor " + survivor.getName());
     }
 
-    @Transactional(readOnly = true)
-    public ActionResult performAction(Long id, Long actionId) {
+    @Transactional
+    public ActionResult performAction(String keycloakId, Long id, Long actionId) {
+        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         Action action = actionRepository.findById(actionId)
@@ -119,7 +130,10 @@ public class SurvivorService {
         effectiveness = (strengthContrib + agilityContrib + trustContrib + intelligenceContrib
                 + courageContrib + enduranceContrib + leadershipContrib) * 10;
 
-        return new ActionResult(survivor, action, effectiveness);
+        ActionResult result = new ActionResult(survivor, action, effectiveness);
+        auditEntryService.create(actor, AuditActionType.ACTION_PERFORMED, "Survivor", id,
+                "Performed action " + action.getName() + " by survivor " + survivor.getName());
+        return result;
     }
 
 }

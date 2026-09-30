@@ -69,26 +69,30 @@ public class SurvivorController {
 
     // One skill per request, e.g. {"skill": "Cooking"}
     @PostMapping("/{id}/skills")
-    public ResponseEntity<SurvivorResponse> addSkill(@PathVariable Long id, @Valid @RequestBody SkillAddRequest request) {
-        survivorService.addSkill(id, request.skill());
+    public ResponseEntity<SurvivorResponse> addSkill(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @Valid @RequestBody SkillAddRequest request) {
+        survivorService.addSkill(jwt.getSubject(), id, request.skill());
         return ResponseEntity.ok(survivorMapper.toResponse(survivorService.findById(id)));
     }
 
     @DeleteMapping("/{id}/skills/{skill}")
-    public ResponseEntity<Void> removeSkill(@PathVariable Long id, @PathVariable Skill skill) {
-        survivorService.removeSkill(id, skill);
+    public ResponseEntity<Void> removeSkill(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @PathVariable Skill skill) {
+        survivorService.removeSkill(jwt.getSubject(), id, skill);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/items")
-    public ResponseEntity<SurvivorResponse> loadItem(@PathVariable Long id, @Valid @RequestBody ItemLoadRequest request) {
-        survivorService.loadItem(id, itemMapper.toEntity(request));
+    public ResponseEntity<SurvivorResponse> loadItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @Valid @RequestBody ItemLoadRequest request) {
+        survivorService.loadItem(jwt.getSubject(), id, itemMapper.toEntity(request));
         return ResponseEntity.ok(survivorMapper.toResponse(survivorService.findById(id)));
     }
 
     @PostMapping("/{id}/actions/{actionId}")
-    public ResponseEntity<ActionResultResponse> performAction(@PathVariable Long id, @PathVariable Long actionId) {
-        ActionResult result = survivorService.performAction(id, actionId);
+    public ResponseEntity<ActionResultResponse> performAction(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @PathVariable Long actionId) {
+        ActionResult result = survivorService.performAction(jwt.getSubject(), id, actionId);
         return ResponseEntity.ok(new ActionResultResponse(id, actionId, result.score()));
     }
 
