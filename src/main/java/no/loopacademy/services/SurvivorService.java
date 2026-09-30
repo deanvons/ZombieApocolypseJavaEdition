@@ -79,15 +79,11 @@ public class SurvivorService {
                 .mapToDouble(Item::getWeight)
                 .sum();
 
-        if (currentLoad + item.getWeight() > getMaxLoad(survivor)) {
+        if (currentLoad + item.getWeight() > survivor.getMaxLoad()) {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
-        survivor.getGear().add(item);
+        survivor.load(item);
 
-    }
-
-    private double getMaxLoad(Survivor survivor) {
-        return 10 + survivor.getAttributes().getStrength() * 3;
     }
 
     @Transactional(readOnly = true)
