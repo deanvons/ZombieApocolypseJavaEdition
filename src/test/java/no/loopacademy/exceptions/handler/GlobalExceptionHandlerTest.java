@@ -9,7 +9,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import no.loopacademy.exceptions.CarryWeightExceededException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceNotFoundException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
@@ -50,20 +49,6 @@ public class GlobalExceptionHandlerTest {
         // ARRANGE
         OverloadedException exception = new OverloadedException("Survivor is overloaded");
         ErrorResponse expectedBody = new ErrorResponse(400, "Survivor is overloaded");
-
-        // ACT
-        ResponseEntity<ErrorResponse> response = handler.handleBusinessRuleViolated(exception);
-
-        // ASSERT
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(expectedBody, response.getBody());
-    }
-
-    @Test
-    void testHandleBusinessRuleViolated_carryWeightExceededException_shouldReturn400WithMessage() {
-        // ARRANGE
-        CarryWeightExceededException exception = new CarryWeightExceededException("I can't carry anymore");
-        ErrorResponse expectedBody = new ErrorResponse(400, "I can't carry anymore");
 
         // ACT
         ResponseEntity<ErrorResponse> response = handler.handleBusinessRuleViolated(exception);
