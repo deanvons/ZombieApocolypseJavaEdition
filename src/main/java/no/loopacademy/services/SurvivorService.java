@@ -9,10 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
+import no.loopacademy.models.audit.AuditActionType;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 
@@ -21,15 +23,24 @@ public class SurvivorService {
 
     private final SurvivorRepository survivorRepository;
     private final ActionRepository actionRepository;
+    private final UserProfileService userProfileService;
+    private final AuditEntryService auditEntryService;
 
-    public SurvivorService(SurvivorRepository survivorRepository, ActionRepository actionRepository) {
+    public SurvivorService(SurvivorRepository survivorRepository, ActionRepository actionRepository,
+            UserProfileService userProfileService, AuditEntryService auditEntryService) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
+        this.userProfileService = userProfileService;
+        this.auditEntryService = auditEntryService;
     }
 
     @Transactional
-    public Survivor create(String name, SurvivorType type) {
-        return survivorRepository.save(new Survivor(name, type));
+    public Survivor create(String keycloakId, String name, SurvivorType type) {
+        UserProfile actor = userProfileService.findByKeycloakId(keycloakId);
+        Survivor survivor = survivorRepository.save(new Survivor(name, type));
+        auditEntryService.create(actor, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
+                "Created " + type + ", survivor " + name);
+        return survivor;
     }
 
     @Transactional(readOnly = true)

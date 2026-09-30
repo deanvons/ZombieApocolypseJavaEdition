@@ -2,6 +2,7 @@ package no.loopacademy.controllers;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,16 +11,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.config.authConfig;
 import no.loopacademy.dtos.request.ItemLoadRequest;
 import no.loopacademy.dtos.response.ItemResponse;
 import no.loopacademy.dtos.response.SurvivorResponse;
@@ -36,8 +42,9 @@ import no.loopacademy.services.SurvivorService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({SurvivorMapperImpl.class, ItemMapperImpl.class})   // real MapStruct mappers, so the JSON shape is the real one
+@Import({ SurvivorMapperImpl.class, ItemMapperImpl.class, authConfig.class }) // real MapStruct mappers, so the JSON
 class SurvivorControllerTest {
+    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
 
     @Autowired 
     private MockMvc mockMvc;                //sends fake HTTP requests
@@ -45,6 +52,10 @@ class SurvivorControllerTest {
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
     
+    @AfterEach
+    void clearSecurityContext() { // Clear jwt token before each test
+        SecurityContextHolder.clearContext();
+    }
 
     //** GET requests */
     @Test
@@ -128,7 +139,13 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(expectedSurvivorId);
         SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
-        when(survivorService.create("Alice", SurvivorType.TESTSURVIVOR)).thenReturn(survivor);
+        when(survivorService.create(KEYCLOAK_ID, "Alice", SurvivorType.TESTSURVIVOR)).thenReturn(survivor);
+
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(KEYCLOAK_ID)
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +156,7 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.name").value(survivorName))
             .andExpect(jsonPath("$.type").value(expectedSurvivorType));
 
-        verify(survivorService).create("Alice", SurvivorType.TESTSURVIVOR);
+        verify(survivorService).create(KEYCLOAK_ID, "Alice", SurvivorType.TESTSURVIVOR);
     }
 
     @Test

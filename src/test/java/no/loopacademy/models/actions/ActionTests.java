@@ -4,12 +4,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import no.loopacademy.services.ActionService;
+import no.loopacademy.services.AuditEntryService;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,19 +32,30 @@ import static org.mockito.Mockito.when;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ActionTests {
+    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
+
+    @InjectMocks
     private SurvivorService survivorService;
+    @Mock
     private SurvivorRepository repository;
     private ActionService actionService;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private UserProfileService userProfileService;
+    @Mock
+    private AuditEntryService auditEntryService;
 
     @BeforeEach
     public void setup() {
-        repository = mock(SurvivorRepository.class);
-        actionRepository = mock(ActionRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
+        actionService = new ActionService(actionRepository);
 
         when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
@@ -61,10 +80,8 @@ public class ActionTests {
 
         when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
         when(actionRepository.getReferenceById(1L)).thenReturn(actions.getFirst());
-
-        survivorService = new SurvivorService(repository, actionRepository);
-
-        actionService = new ActionService(actionRepository);
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
+                .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
 
     }
 
@@ -106,7 +123,7 @@ public class ActionTests {
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
         String expectedName = "Kevin";
-        survivorService.create(expectedName, SurvivorType.CAREGIVER);
+        survivorService.create(KEYCLOAK_ID, expectedName, SurvivorType.CAREGIVER);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(1L).getId(); // Attack type action
 

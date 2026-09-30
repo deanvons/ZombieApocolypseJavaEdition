@@ -10,13 +10,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
@@ -24,18 +29,28 @@ import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class SurvivorServiceTest {
+    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
+
+    @InjectMocks
     private SurvivorService survivorService;
+    @Mock
     private SurvivorRepository repository;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private AuditEntryService auditEntryService;
+    @Mock
+    private UserProfileService userProfileService;
 
     @BeforeEach
     void setup() {
-        repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
-        actionRepository = mock(ActionRepository.class);
 
         when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
@@ -50,8 +65,8 @@ public class SurvivorServiceTest {
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
-
-        survivorService = new SurvivorService(repository, actionRepository);
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
+                .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
     }
 
     @Test
@@ -64,7 +79,7 @@ public class SurvivorServiceTest {
 
     @Test
     void findById_ExistingId_shouldReturnSurvivor() {
-        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorType.CAREGIVER);
+        Survivor expectedSurvivor = survivorService.create(KEYCLOAK_ID, "Tester1", SurvivorType.CAREGIVER);
         expectedSurvivor.setId(1L);
 
         Survivor actualSurvivor = survivorService.findById(1L);
@@ -78,15 +93,15 @@ public class SurvivorServiceTest {
         SurvivorType survivorType = SurvivorType.CAREGIVER;
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
-        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+        Survivor survivor = survivorService.create(KEYCLOAK_ID, "Tester2", SurvivorType.CAREGIVER);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
 
     @Test
     void findAll_shouldReturnAllSurvivors() {
-        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
-        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+        Survivor survivor1 = survivorService.create(KEYCLOAK_ID, "Tester1", SurvivorType.CAREGIVER);
+        Survivor survivor2 = survivorService.create(KEYCLOAK_ID, "Tester2", SurvivorType.CAREGIVER);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualSurvivors = survivorService.findAll();
@@ -97,7 +112,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(KEYCLOAK_ID, "CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
@@ -110,7 +125,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(KEYCLOAK_ID, "CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
@@ -122,7 +137,7 @@ public class SurvivorServiceTest {
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(KEYCLOAK_ID, "CareGiver", SurvivorType.CAREGIVER);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
         survivorService.removeSkill(1L, Skill.PsychologicalSupport);
@@ -138,7 +153,7 @@ public class SurvivorServiceTest {
         SurvivorType survivorType = SurvivorType.CAREGIVER;
         String itemName = "Medkit";
         Double itemWeight = 500000.0;
-        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Item item = new Item(itemName, itemWeight);
         long survivorId = survivor.getId();
 
@@ -158,7 +173,7 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(survivorName, survivorType);
+        Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
 
         long survivorId = survivor.getId();
 

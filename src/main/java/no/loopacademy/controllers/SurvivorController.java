@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,7 +25,9 @@ import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
+import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.services.SurvivorService;
+
 @RestController
 @RequestMapping("/api/survivors")
 public class SurvivorController {
@@ -48,8 +52,10 @@ public class SurvivorController {
     }
 
     @PostMapping
-    public ResponseEntity<SurvivorResponse> createSurvivor(@Valid @RequestBody SurvivorCreateRequest request) {
-        Survivor survivor = survivorService.create(request.name(), survivorMapper.toSurvivorType(request.type()));
+    public ResponseEntity<SurvivorResponse> createSurvivor(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody SurvivorCreateRequest request) {
+        Survivor survivor = survivorService.create(jwt.getSubject(), request.name(),
+                survivorMapper.toSurvivorType(request.type()));
         return ResponseEntity
             .created(URI.create("/api/survivors/" + survivor.getId()))
             .body(survivorMapper.toResponse(survivor));
@@ -61,6 +67,7 @@ public class SurvivorController {
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
     }
 
+    // One skill per request, e.g. {"skill": "Cooking"}
     @PostMapping("/{id}/skills")
     public ResponseEntity<SurvivorResponse> addSkill(@PathVariable Long id, @Valid @RequestBody SkillAddRequest request) {
         survivorService.addSkill(id, request.skill());

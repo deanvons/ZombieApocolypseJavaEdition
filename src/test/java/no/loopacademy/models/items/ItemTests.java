@@ -9,29 +9,47 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
+import no.loopacademy.services.AuditEntryService;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ItemTests {
+    private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
+
+    @InjectMocks
     private SurvivorService survivorService;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private SurvivorRepository repository;
+    @Mock
+    private UserProfileService userProfileService;
+    @Mock
+    private AuditEntryService auditEntryService;
 
     @BeforeEach
     public void setup() {
-        SurvivorRepository repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
-        actionRepository = mock(ActionRepository.class);
 
         when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
@@ -43,8 +61,9 @@ public class ItemTests {
         });
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
+                .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
 
-        survivorService = new SurvivorService(repository, actionRepository);
     }
 
     @Test
@@ -115,7 +134,7 @@ public class ItemTests {
         // Arrange
         String survivorName = "John";
         SurvivorType survivorType = SurvivorType.CAREGIVER;
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         String toolName = "Spanner";
         Double toolWeight = 10.0;
         double toolDurability = 100;
@@ -132,7 +151,7 @@ public class ItemTests {
         // Arrange
         String survivorName = "John";
         SurvivorType survivorType = SurvivorType.CAREGIVER;
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         String toolName = "Spanner";
         Double toolWeight = 10.0;
         double toolDurability = 100;
@@ -154,7 +173,7 @@ public class ItemTests {
         // Arrange
         String survivorName = "John";
         SurvivorType survivorType = SurvivorType.CAREGIVER;
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         String toolName = "Spanner";
         Double toolWeight = 100.0;
         double toolDurability = 100;
@@ -168,7 +187,7 @@ public class ItemTests {
         // Arrange
         String survivorName = "John";
         SurvivorType survivorType = SurvivorType.CAREGIVER;
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         String toolName = "Spanner";
         Double toolWeight = 10.0;
         double toolDurability = 100;
