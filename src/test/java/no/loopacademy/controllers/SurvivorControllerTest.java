@@ -17,10 +17,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
@@ -28,18 +32,22 @@ import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.services.SurvivorService;
+import no.loopacademy.services.UserProfileService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import({SurvivorMapperImpl.class, ItemMapperImpl.class})   // real MapStruct mappers, so the JSON shape is the real one
 class SurvivorControllerTest {
+    private static final String KEYCLOAK_ID = "test-user";
     private String survivorName;
     private String expectedSurvivorName;
     private SurvivorType survivorType;
     private String expectedSurvivorTypeString;
     private Long survivorId;
     private Long actionId;
+    private UserProfile user;
 
     private String itemMedkit;
     private Double itemMedkitWeight;
@@ -51,6 +59,9 @@ class SurvivorControllerTest {
     @MockitoBean 
     private SurvivorService survivorService; //fake service, w/o db
 
+    @MockitoBean
+    private UserProfileService userProfileService; //looks up the logged-in player's profile
+
 
     @BeforeEach
     void setup(){
@@ -60,6 +71,10 @@ class SurvivorControllerTest {
         expectedSurvivorTypeString = survivorType.name();
         survivorId = 1L;
         actionId = 2L;
+
+        // The logged-in player (see loginAs) and their profile
+        user = new UserProfile(KEYCLOAK_ID, "tester");
+        when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(user);
 
         itemMedkit = "Medkit";
         itemMedkitWeight = 2.5;
@@ -123,13 +138,45 @@ class SurvivorControllerTest {
         
     }
 
+    @Test 
+    void getMySurvivor_ReturnsSurvivor() throws Exception {
+        Survivor survivor = new Survivor(expectedSurvivorName, survivorType);
+
+        when(survivorService.findByUser(user)).thenReturn(survivor);
+        
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value(expectedSurvivorName))
+            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
+    }
+
+    @Test 
+    void getMySurvivor_NoneCreated_Returns404() throws Exception {
+        int expectedStatusCode = 404;
+        String expectedErrorMessage = "Survivor Not Found";
+
+        when(survivorService.findByUser(user))
+            .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
+
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(get("/api/survivors/me"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+        
+    }
+
     /** POST, PUT, DELETE requests */
     @Test
     void createSurvivor_ReturnsCreatedSurvivor() throws Exception {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
-        // SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
-        when(survivorService.create(survivorName, survivorType)).thenReturn(survivor);
+        
+        when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -141,7 +188,26 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.name").value(survivorName))
             .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
-        verify(survivorService).create(expectedSurvivorName, survivorType);
+        verify(survivorService).create(user, expectedSurvivorName, survivorType);
+    }
+
+
+    @Test
+    void createSurvivor_AlreadyHasSurvivor_Returns409() throws Exception {
+        int expectedStatusCode = 409;
+        String expectedErrorMessage = "This user already has a survivor";
+
+        when(survivorService.create(user, survivorName, survivorType))
+            .thenThrow(new UserAlreadyHasSurvivorException(expectedErrorMessage));
+        loginAs(KEYCLOAK_ID);
+        
+        mockMvc.perform(post("/api/survivors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + survivorName
+                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
     }
 
     @Test
@@ -201,4 +267,14 @@ class SurvivorControllerTest {
         verify(survivorService).performAction(survivorId, actionId);
     }
 
+    // Security filters are off in this class (addFilters = false), so jwt() from spring-security-test
+    // never reaches @AuthenticationPrincipal. Put the token straight into the security context instead;
+    // spring-security-test clears it after each test.
+    private void loginAs(String keycloakId) {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+            .header("alg", "none")
+            .subject(keycloakId)
+            .build();
+        TestSecurityContextHolder.setAuthentication(new JwtAuthenticationToken(jwt));
+    }
 }

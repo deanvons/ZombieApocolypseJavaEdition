@@ -7,6 +7,7 @@ import no.loopacademy.services.ActionService;
 import no.loopacademy.services.SurvivorService;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
+import no.loopacademy.repositories.UserProfileRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,9 +25,11 @@ import static org.mockito.Mockito.when;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 
 public class ActionTests {
     private SurvivorService survivorService;
+    private UserProfileRepository userProfileRepository;
     private SurvivorRepository repository;
     private ActionService actionService;
     private ActionRepository actionRepository;
@@ -65,7 +68,9 @@ public class ActionTests {
 
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
 
-        survivorService = new SurvivorService(repository, actionRepository);
+        userProfileRepository = mock(UserProfileRepository.class);
+
+        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
 
         actionService = new ActionService(actionRepository);
 
@@ -108,7 +113,7 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(newUser(), survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
@@ -144,4 +149,8 @@ public class ActionTests {
         return weights;
     }
 
+    // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
+    private UserProfile newUser() {
+        return new UserProfile("test-user", "tester");
+    }
 }
