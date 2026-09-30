@@ -34,6 +34,9 @@ public class SurvivorServiceTest {
     private String secondSurvivorName;
     private SurvivorType survivorType;
     private Long survivorId;
+    private Long unknownSurvivorId;
+    private Long actionId;
+    private Long unknownActionId;
     private String itemName;
     private Double itemWeight;
 
@@ -43,6 +46,9 @@ public class SurvivorServiceTest {
         secondSurvivorName = "SecondGenericSurvivorName";
         survivorType = SurvivorType.CAREGIVER;
         survivorId = 1L;
+        unknownSurvivorId = 99L;
+        actionId = 1L;
+        unknownActionId = 99L;
         itemName = "GenericItemName";
         itemWeight = 5.0;
 
@@ -71,7 +77,7 @@ public class SurvivorServiceTest {
     void findById_SurvivorNotFound_shouldThrowException() {
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.findById(99L);
+            survivorService.findById(unknownSurvivorId);
         });
     }
 
@@ -174,14 +180,14 @@ public class SurvivorServiceTest {
     @Test
     void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.addSkill(99L, Skill.Cooking);
+            survivorService.addSkill(unknownSurvivorId, Skill.Cooking);
         });
     }
 
     @Test
     void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.removeSkill(99L, Skill.Cooking);
+            survivorService.removeSkill(unknownSurvivorId, Skill.Cooking);
         });
     }
 
@@ -190,14 +196,14 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.loadItem(99L, item);
+            survivorService.loadItem(unknownSurvivorId, item);
         });
     }
 
     @Test
     void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.performAction(99L, 1L);
+            survivorService.performAction(unknownSurvivorId, actionId);
         });
     }
 
@@ -206,7 +212,7 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
-            survivorService.performAction(survivor.getId(), 99L);
+            survivorService.performAction(survivor.getId(), unknownActionId);
         });
     }
 
