@@ -49,8 +49,6 @@ public class SurvivorServiceTest {
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-        when(repository.getReferenceById(any(Long.class)))
-                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
         when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
 
         survivorService = new SurvivorService(repository, actionRepository);

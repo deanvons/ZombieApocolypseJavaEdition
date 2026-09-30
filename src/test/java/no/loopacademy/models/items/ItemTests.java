@@ -41,8 +41,6 @@ public class ItemTests {
             survivors.put(survivor.getId(), survivor);
             return survivor;
         });
-        when(repository.getReferenceById(any(Long.class)))
-                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> java.util.Optional.ofNullable(survivors.get(invocation.getArgument(0))));
 
