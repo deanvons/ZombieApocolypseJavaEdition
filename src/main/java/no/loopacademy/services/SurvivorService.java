@@ -1,13 +1,15 @@
 package no.loopacademy.services;
 
-import no.loopacademy.exceptions.ActionNotFoundException;
-import no.loopacademy.exceptions.OverloadedException;
 import java.util.List;
 
 import org.hibernate.Hibernate;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
@@ -31,7 +33,16 @@ public class SurvivorService {
 
     @Transactional
     public Survivor create(String name, SurvivorType type) {
-        return survivorRepository.save(new Survivor(name, type));
+        if (survivorRepository.existsByName(name)) {
+            throw new ResourceConflictException("A survivor with this name already exists");
+        }
+        try {
+            // saveAndFlush so a unique-constraint violation surfaces here, not at commit
+            return survivorRepository.saveAndFlush(new Survivor(name, type));
+        } catch (DataIntegrityViolationException e) {
+            // Two simultaneous first requests: both passed the check above, the database stopped the second
+            throw new ResourceConflictException("A survivor with this name already exists");
+        }
     }
 
     @Transactional(readOnly = true)

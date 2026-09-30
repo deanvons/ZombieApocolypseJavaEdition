@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
@@ -142,6 +143,24 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
         verify(survivorService).create(expectedSurvivorName, survivorType);
+    }
+
+    @Test
+    void createSurvivorShouldReturn409IfNameExists() throws Exception {
+        //Arrange
+        int expectedStatusCode = 409;
+        String expectedErrorMessage = "A survivor with this name already exists";
+        when(survivorService.create(survivorName, survivorType))
+            .thenThrow(new ResourceConflictException(expectedErrorMessage));
+
+        //Act + assert
+        mockMvc.perform(post("/api/survivors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + survivorName
+                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
     }
 
     @Test

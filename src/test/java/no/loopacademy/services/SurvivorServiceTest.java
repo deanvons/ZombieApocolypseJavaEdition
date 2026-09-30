@@ -12,14 +12,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
@@ -57,7 +61,7 @@ public class SurvivorServiceTest {
         AtomicLong nextId = new AtomicLong(1);
         actionRepository = mock(ActionRepository.class);
 
-        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
             if (survivor.getId() == null) {
                 survivor.setId(nextId.getAndIncrement());
@@ -98,6 +102,28 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
+    }
+
+    @Test
+    void create_NameAlreadyExists_shouldThrowException() {
+        when(repository.existsByName(survivorName)).thenReturn(true);
+        
+        assertThrows(ResourceConflictException.class, () -> {
+            survivorService.create(survivorName, survivorType);
+        });
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void create_SimultaneousRequests_shouldThrowException() {
+        // Simulates two simultaneous first requests: the check passes, the unique constraint catches it
+        when(repository.existsByName(survivorName)).thenReturn(false);
+        when(repository.saveAndFlush(any(Survivor.class)))
+            .thenThrow(new DataIntegrityViolationException(""));
+
+        assertThrows(ResourceConflictException.class, () -> {
+            survivorService.create(survivorName, survivorType);
+        });
     }
 
     @Test

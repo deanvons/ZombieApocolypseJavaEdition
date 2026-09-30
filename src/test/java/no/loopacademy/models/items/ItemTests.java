@@ -50,7 +50,7 @@ public class ItemTests {
         AtomicLong nextId = new AtomicLong(1);
         actionRepository = mock(ActionRepository.class);
 
-        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
             if (survivor.getId() == null) {
                 survivor.setId(nextId.getAndIncrement());
