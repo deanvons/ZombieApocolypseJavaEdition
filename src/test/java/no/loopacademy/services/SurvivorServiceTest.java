@@ -18,6 +18,7 @@ import no.loopacademy.repositories.SurvivorRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.models.items.Item;
@@ -50,6 +51,7 @@ public class SurvivorServiceTest {
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
+        when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
 
         survivorService = new SurvivorService(repository, actionRepository);
     }
@@ -168,6 +170,45 @@ public class SurvivorServiceTest {
 
         // ASSERT
         assertEquals(expectedGearList, actualGear);
+    }
+
+    @Test
+    void testAddSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.addSkill(99L, Skill.Cooking);
+        });
+    }
+
+    @Test
+    void testRemoveSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.removeSkill(99L, Skill.Cooking);
+        });
+    }
+
+    @Test
+    void testLoadItemUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        Item item = new Item("Medkit", 1.0);
+
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.loadItem(99L, item);
+        });
+    }
+
+    @Test
+    void testPerformActionUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.performAction(99L, 1L);
+        });
+    }
+
+    @Test
+    void testPerformActionUnknownAction_shouldThrowActionNotFoundException() {
+        Survivor survivor = survivorService.create("Tester", SurvivorType.CAREGIVER);
+
+        assertThrows(ActionNotFoundException.class, () -> {
+            survivorService.performAction(survivor.getId(), 99L);
+        });
     }
 
 }
