@@ -24,6 +24,7 @@ import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
+import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.items.Tool;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
@@ -121,6 +122,55 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.status").value(expectedStatusCode))
             .andExpect(jsonPath("$.message").value(expectedErrorMessage));
         
+    }
+
+    @Test
+    void getSurvivorGear_ReturnsGearItems() throws Exception {
+        Tool expectedGearItem = new Tool(itemMedkit, itemMedkitWeight, itemMedkitDurability);
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        survivor.setGear(List.of(expectedGearItem));
+        when(survivorService.findById(survivorId)).thenReturn(survivor);
+
+        mockMvc.perform(get("/api/survivors/" + survivorId + "/gear"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].type").value("tool"))
+            .andExpect(jsonPath("$[0].name").value(expectedGearItem.getName()))
+            .andExpect(jsonPath("$[0].weight").value(expectedGearItem.getWeight()))
+            .andExpect(jsonPath("$[0].durability").value(expectedGearItem.getDurability()));
+
+        verify(survivorService).findById(survivorId);
+    }
+
+    @Test
+    void getSurvivorAttributes_ReturnsAttributes() throws Exception {
+        SurvivorAttributes expectedAttributes = new SurvivorAttributes();
+        expectedAttributes.setStrength(7.0);
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        survivor.setAttributes(expectedAttributes);
+        when(survivorService.findById(survivorId)).thenReturn(survivor);
+
+        mockMvc.perform(get("/api/survivors/" + survivorId + "/attributes"))
+                .andExpect(status().isOk())
+            .andExpect(jsonPath("$.strength").value(expectedAttributes.getStrength()));
+
+        verify(survivorService).findById(survivorId);
+    }
+
+    @Test
+    void getSurvivorSkills_ReturnsSkills() throws Exception {
+        List<Skill> expectedSkills = List.of(Skill.Accuracy, Skill.PsychologicalSupport);
+        Survivor survivor = new Survivor(survivorName, survivorType);
+        survivor.setSkills(expectedSkills);
+        when(survivorService.findById(survivorId)).thenReturn(survivor);
+
+        mockMvc.perform(get("/api/survivors/" + survivorId + "/skills"))
+                .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(expectedSkills.size()))
+            .andExpect(jsonPath("$[0]").value(expectedSkills.get(0).name()))
+            .andExpect(jsonPath("$[1]").value(expectedSkills.get(1).name()));
+
+        verify(survivorService).findById(survivorId);
     }
 
     /** POST, PUT, DELETE requests */
