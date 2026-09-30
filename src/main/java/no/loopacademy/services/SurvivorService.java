@@ -9,12 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
+import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 
@@ -24,14 +26,29 @@ public class SurvivorService {
     private final SurvivorRepository survivorRepository;
     private final ActionRepository actionRepository;
 
-    public SurvivorService(SurvivorRepository survivorRepository, ActionRepository actionRepository) {
+    private final UserProfileService userProfileService;
+
+    public SurvivorService(
+        SurvivorRepository survivorRepository, 
+        ActionRepository actionRepository,
+        UserProfileService userProfileService
+    ) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
+        this.userProfileService = userProfileService;
     }
 
     @Transactional
-    public Survivor create(String name, SurvivorType type) {
-        return survivorRepository.save(new Survivor(name, type));
+    public Survivor create(String keycloakId, String name, SurvivorType type) {
+        UserProfile user = this.userProfileService.findByKeycloakId(keycloakId); //UserProfileNotFoundException if no user (404)
+        
+        if (user.hasSurvivor()) {
+            throw new UserAlreadyHasSurvivorException("This user already has a survivor");
+        } //409 error
+
+        Survivor survivor = survivorRepository.save(new Survivor(name, type));
+        user.setSurvivor(survivor);
+        return survivor;
     }
 
     @Transactional(readOnly = true)
@@ -47,6 +64,19 @@ public class SurvivorService {
         initializeCollections(survivor);
         return survivor;
     }
+
+    @Transactional(readOnly = true)
+    public Survivor findByKeycloakId(String keycloakId) {
+        UserProfile user = this.userProfileService.findByKeycloakId(keycloakId); //UserProfileNotFoundException if no user (404)
+
+        if (!user.hasSurvivor()) {
+            throw new SurvivorNotFoundException("No survivor found for user");
+        }
+
+        Survivor survivor = user.getSurvivor();
+        initializeCollections(survivor); //Loads skills and gear before transaction ends.
+        return survivor;
+	}
 
     // open-in-view is off, so lazy collections must be loaded before the transaction ends,
     // otherwise mapping to a DTO in the controller throws LazyInitializationException

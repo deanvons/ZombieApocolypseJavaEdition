@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,8 +50,10 @@ public class SurvivorController {
     }
 
     @PostMapping
-    public ResponseEntity<SurvivorResponse> createSurvivor(@Valid @RequestBody SurvivorCreateRequest request) {
-        Survivor survivor = survivorService.create(request.name(), survivorMapper.toSurvivorType(request.type()));
+    public ResponseEntity<SurvivorResponse> createSurvivor(@AuthenticationPrincipal Jwt jwt,
+        @Valid @RequestBody SurvivorCreateRequest request
+    ) {
+        Survivor survivor = survivorService.create(jwt.getSubject(), request.name(), survivorMapper.toSurvivorType(request.type()));
         return ResponseEntity
             .created(URI.create("/api/survivors/" + survivor.getId()))
             .body(survivorMapper.toResponse(survivor));
@@ -58,6 +62,12 @@ public class SurvivorController {
     @GetMapping("/{id}")
     public ResponseEntity<SurvivorResponse> getSurvivorById(@PathVariable Long id) {
         Survivor survivor = survivorService.findById(id);
+        return ResponseEntity.ok(survivorMapper.toResponse(survivor));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<SurvivorResponse> getMySurvivor(@AuthenticationPrincipal Jwt jwt) {
+        Survivor survivor = survivorService.findByKeycloakId(jwt.getSubject());
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
     }
 
