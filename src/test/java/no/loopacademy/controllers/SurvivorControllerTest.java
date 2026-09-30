@@ -17,6 +17,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,6 +37,7 @@ import no.loopacademy.services.SurvivorService;
 @AutoConfigureMockMvc(addFilters = false)
 @Import({SurvivorMapperImpl.class, ItemMapperImpl.class})   // real MapStruct mappers, so the JSON shape is the real one
 class SurvivorControllerTest {
+    private static final String KEYCLOAK_ID = "test-user";
     private String survivorName;
     private String expectedSurvivorName;
     private SurvivorType survivorType;
@@ -129,7 +133,8 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
         // SurvivorResponse response = response(expectedSurvivorId, survivorName, expectedSurvivorType);
-        when(survivorService.create(survivorName, survivorType)).thenReturn(survivor);
+        when(survivorService.create(KEYCLOAK_ID, survivorName, survivorType)).thenReturn(survivor);
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -141,7 +146,7 @@ class SurvivorControllerTest {
             .andExpect(jsonPath("$.name").value(survivorName))
             .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
-        verify(survivorService).create(expectedSurvivorName, survivorType);
+        verify(survivorService).create(KEYCLOAK_ID, expectedSurvivorName, survivorType);
     }
 
     @Test
@@ -201,4 +206,14 @@ class SurvivorControllerTest {
         verify(survivorService).performAction(survivorId, actionId);
     }
 
+    // Security filters are off in this class (addFilters = false), so jwt() from spring-security-test
+    // never reaches @AuthenticationPrincipal. Put the token straight into the security context instead;
+    // spring-security-test clears it after each test.
+    private void loginAs(String keycloakId) {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+            .header("alg", "none")
+            .subject(keycloakId)
+            .build();
+        TestSecurityContextHolder.setAuthentication(new JwtAuthenticationToken(jwt));
+    }
 }

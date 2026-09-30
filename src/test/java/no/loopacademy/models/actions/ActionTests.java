@@ -24,9 +24,13 @@ import static org.mockito.Mockito.when;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
+import no.loopacademy.services.UserProfileService;
 
 public class ActionTests {
+    private static final String KEYCLOAK_ID = "test-user";
     private SurvivorService survivorService;
+    private UserProfileService userProfileService;
     private SurvivorRepository repository;
     private ActionService actionService;
     private ActionRepository actionRepository;
@@ -68,7 +72,12 @@ public class ActionTests {
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
         when(actionRepository.getReferenceById(primaryActionId)).thenReturn(actions.getFirst());
 
-        survivorService = new SurvivorService(repository, actionRepository);
+        // Fresh profile per call, so tests that create several survivors don't hit the one-survivor rule
+        userProfileService = mock(UserProfileService.class);
+        when(userProfileService.findByKeycloakId(any()))
+                .thenAnswer(invocation -> new UserProfile(KEYCLOAK_ID, "tester"));
+
+        survivorService = new SurvivorService(repository, actionRepository, userProfileService);
 
         actionService = new ActionService(actionRepository);
 
@@ -111,7 +120,7 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        survivorService.create(survivorName, survivorType);
+        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 

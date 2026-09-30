@@ -20,10 +20,14 @@ import org.junit.jupiter.api.Test;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
+import no.loopacademy.models.userprofile.UserProfile;
+import no.loopacademy.services.UserProfileService;
 import no.loopacademy.services.SurvivorService;
 
 public class ItemTests {
+    private static final String KEYCLOAK_ID = "test-user";
     private SurvivorService survivorService;
+    private UserProfileService userProfileService;
     private ActionRepository actionRepository;
     private String survivorName;
     private SurvivorType survivorType;
@@ -61,7 +65,12 @@ public class ItemTests {
         when(repository.getReferenceById(any(Long.class)))
                 .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
-        survivorService = new SurvivorService(repository, actionRepository);
+        // Fresh profile per call, so tests that create several survivors don't hit the one-survivor rule
+        userProfileService = mock(UserProfileService.class);
+        when(userProfileService.findByKeycloakId(any()))
+                .thenAnswer(invocation -> new UserProfile(KEYCLOAK_ID, "tester"));
+
+        survivorService = new SurvivorService(repository, actionRepository, userProfileService);
     }
 
     @Test
@@ -122,7 +131,7 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         int expectedGearItemCount = 1;
         // Act
@@ -134,7 +143,7 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage);
         int expectedGearItemCount = 2;
@@ -148,7 +157,7 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Double overloadedToolWeight = 100.0;
         Tool tool = new Tool(toolName, overloadedToolWeight, toolDurability);
         // Act & assert
@@ -158,7 +167,7 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(survivorName, survivorType);
+        Survivor john = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Double overloadedWeaponWeight = 10.0;
         Weapon weapon = new Weapon(weaponName, overloadedWeaponWeight, weaponDamage); // Too heavy
