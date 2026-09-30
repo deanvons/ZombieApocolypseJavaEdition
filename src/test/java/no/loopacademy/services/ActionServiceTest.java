@@ -18,22 +18,28 @@ import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
 
 public class ActionServiceTest {
-    ActionService actionService;
-    ActionRepository actionRepository;
+    private ActionService actionService;
+    private ActionRepository actionRepository;
+    private Long primaryActionId;
+    private String primaryActionName;
+    private ActionType primaryActionType;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
+        primaryActionId = 1L;
+        primaryActionName = "Attack";
+        primaryActionType = ActionType.Attack;
         actionRepository = mock(ActionRepository.class);
 
         List<Action> actions = List.of(
-                action(1L, "Attack", ActionType.Attack),
+                action(primaryActionId, primaryActionName, primaryActionType),
                 action(2L, "Heal", ActionType.Heal),
                 action(3L, "Scavenge", ActionType.Scavenge),
                 action(4L, "Build Shelter", ActionType.Build),
                 action(5L, "Persuade", ActionType.Persuade));
 
         when(actionRepository.findAll()).thenReturn(actions);
-        when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
+        when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
         when(actionRepository.findById(999L)).thenReturn(Optional.empty());
 
         actionService = new ActionService(actionRepository);
@@ -47,13 +53,10 @@ public class ActionServiceTest {
 
     @Test
     void shouldFindActionById() {
-        Long actionId = 1L;
-        String expectedActionName = "Attack";
-        ActionType expectedActionType = ActionType.Attack;
-        Action action = actionService.findById(actionId);
+        Action action = actionService.findById(primaryActionId);
 
-        assertEquals(expectedActionName, action.getName());
-        assertEquals(expectedActionType, action.getType());
+        assertEquals(primaryActionName, action.getName());
+        assertEquals(primaryActionType, action.getType());
     }
 
     @Test
