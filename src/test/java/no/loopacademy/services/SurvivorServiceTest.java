@@ -29,9 +29,22 @@ public class SurvivorServiceTest {
     private SurvivorService survivorService;
     private SurvivorRepository repository;
     private ActionRepository actionRepository;
+    private String survivorName;
+    private String secondSurvivorName;
+    private SurvivorType survivorType;
+    private Long survivorId;
+    private String itemName;
+    private Double itemWeight;
 
     @BeforeEach
     void setup() {
+        survivorName = "GenericSurvivorName";
+        secondSurvivorName = "SecondGenericSurvivorName";
+        survivorType = SurvivorType.CAREGIVER;
+        survivorId = 1L;
+        itemName = "GenericItemName";
+        itemWeight = 5.0;
+
         repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
@@ -64,29 +77,27 @@ public class SurvivorServiceTest {
 
     @Test
     void findById_ExistingId_shouldReturnSurvivor() {
-        Survivor expectedSurvivor = survivorService.create("Tester1", SurvivorType.CAREGIVER);
-        expectedSurvivor.setId(1L);
+        Survivor expectedSurvivor = survivorService.create(survivorName, survivorType);
+        expectedSurvivor.setId(survivorId);
 
-        Survivor actualSurvivor = survivorService.findById(1L);
+        Survivor actualSurvivor = survivorService.findById(survivorId);
 
         assertEquals(expectedSurvivor, actualSurvivor);
     }
 
     @Test
     void create_CaregiverType_shouldReturnSurvivor() {
-        String survivorName = "Tester";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
         Survivor careGiver = new Survivor(survivorName, survivorType);
 
-        Survivor survivor = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+        Survivor survivor = survivorService.create(survivorName, survivorType);
 
         assertEquals(careGiver.getClass(), survivor.getClass());
     }
 
     @Test
     void findAll_shouldReturnAllSurvivors() {
-        Survivor survivor1 = survivorService.create("Tester1", SurvivorType.CAREGIVER);
-        Survivor survivor2 = survivorService.create("Tester2", SurvivorType.CAREGIVER);
+        Survivor survivor1 = survivorService.create(survivorName, survivorType);
+        Survivor survivor2 = survivorService.create(secondSurvivorName, survivorType);
         List<Survivor> expectedSurvivors = List.of(survivor1, survivor2);
 
         List<Survivor> actualSurvivors = survivorService.findAll();
@@ -97,36 +108,36 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
 
-        survivorService.addSkill(1L, Skill.Accuracy);
-        List<Skill> actualOutput = survivorService.findById(1L).getSkills();
+        survivorService.addSkill(survivorId, Skill.Accuracy);
+        List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
     }
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
-        survivorService.addSkill(1L, Skill.FieldMedicine);
-        List<Skill> actualOutput = survivorService.findById(1L).getSkills();
+        survivorService.addSkill(survivorId, Skill.FieldMedicine);
+        List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
     }
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create("CareGiver", SurvivorType.CAREGIVER);
+        survivorService.create(survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
-        survivorService.removeSkill(1L, Skill.PsychologicalSupport);
-        List<Skill> actualOutput = survivorService.findById(1L).getSkills();
+        survivorService.removeSkill(survivorId, Skill.PsychologicalSupport);
+        List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
     }
@@ -134,36 +145,26 @@ public class SurvivorServiceTest {
     @Test
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
-        String survivorName = "Kevin";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
-        String itemName = "Medkit";
-        Double itemWeight = 500000.0;
-        Survivor survivor = survivorService.create(survivorName, survivorType);
-        Item item = new Item(itemName, itemWeight);
-        long survivorId = survivor.getId();
+        Double overloadedItemWeight = 500000.0;
+        survivorService.create(survivorName, survivorType);
+        Item item = new Item(itemName, overloadedItemWeight);
 
         // ACT & ASSERT
         assertThrows(OverloadedException.class, () -> {
-            survivorService.loadItem(survivorId, item);
+            survivorService.loadItem(this.survivorId, item);
         });
     }
 
     @Test
     void loadItem_ItemWithinCapacity_shouldAddItemToGear() {
         // ARRANGE
-        String survivorName = "Kevin";
-        SurvivorType survivorType = SurvivorType.CAREGIVER;
-        String itemName = "Medkit";
-        Double itemWeight = 5.0;
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
         Survivor survivor = survivorService.create(survivorName, survivorType);
 
-        long survivorId = survivor.getId();
-
         // ACT
-        survivorService.loadItem(survivorId, item);
+        survivorService.loadItem(survivor.getId(), item);
         List<Item> actualGear = survivor.getGear();
 
         // ASSERT

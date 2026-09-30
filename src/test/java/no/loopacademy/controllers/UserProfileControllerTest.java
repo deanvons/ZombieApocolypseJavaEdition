@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.Instant;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,7 +29,8 @@ import no.loopacademy.services.UserProfileService;
 @WebMvcTest(UserProfileController.class)
 @Import(authConfig.class)
 class UserProfileControllerTest {
-
+    private String expectedDisplayName;
+    private Long userProfileId;
     private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
 
     @Autowired
@@ -40,6 +42,12 @@ class UserProfileControllerTest {
     @MockitoBean
     private UserProfileMapper userProfileMapper;
 
+    @BeforeEach
+    void setup(){
+        expectedDisplayName = "Kevin";
+        userProfileId = 1L;
+    }
+
     @Test
     void getMyProfileWithoutTokenShouldReturn401() throws Exception {
         mockMvc.perform(get("/api/profiles/me"))
@@ -48,11 +56,11 @@ class UserProfileControllerTest {
 
     @Test
     void getMyProfileShouldLookUpByTokenSubject() throws Exception {
-        String expectedDisplayName = "rick";
-        UserProfile profile = new UserProfile(KEYCLOAK_ID, "rick");
+
+        UserProfile profile = new UserProfile(KEYCLOAK_ID, expectedDisplayName);
         when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
-            .thenReturn(new UserProfileResponse(1L, expectedDisplayName, Instant.now(), null));
+            .thenReturn(new UserProfileResponse(userProfileId, expectedDisplayName, Instant.now(), null));
 
         mockMvc.perform(get("/api/profiles/me").with(jwt().jwt(j -> j.subject(KEYCLOAK_ID))))
             .andExpect(status().isOk())
@@ -71,12 +79,12 @@ class UserProfileControllerTest {
 
     @Test
     void createMyProfileShouldUseSubjectAndUsernameFromToken() throws Exception {
-        String expectedDisplayName = "rick";
+
         String expectedLocation = "/api/profiles/me";
-        UserProfile profile = new UserProfile(KEYCLOAK_ID, "rick");
+        UserProfile profile = new UserProfile(KEYCLOAK_ID, expectedDisplayName);
         when(userProfileService.create(KEYCLOAK_ID, expectedDisplayName)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
-            .thenReturn(new UserProfileResponse(1L, "rick", Instant.now(), null));
+            .thenReturn(new UserProfileResponse(userProfileId, expectedDisplayName, Instant.now(), null));
 
         mockMvc.perform(post("/api/profiles/me")
                 .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", expectedDisplayName))))
@@ -87,11 +95,11 @@ class UserProfileControllerTest {
 
     @Test
     void createMyProfileTwiceShouldReturn409() throws Exception {
-        when(userProfileService.create(KEYCLOAK_ID, "rick"))
+        when(userProfileService.create(KEYCLOAK_ID, expectedDisplayName))
             .thenThrow(new ResourceConflictException("A profile already exists for this user"));
 
         mockMvc.perform(post("/api/profiles/me")
-                .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", "rick"))))
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", expectedDisplayName))))
             .andExpect(status().isConflict());
     }
 }
