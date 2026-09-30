@@ -146,7 +146,7 @@ public class ItemTests {
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         int expectedGearItemCount = 1;
         // Act
-        survivorService.loadItem(john.getId(), tool);
+        survivorService.loadItem(KEYCLOAK_ID, john.getId(), tool);
         // Assert - to check if he has it equipped
         assertEquals(expectedGearItemCount, john.getGear().size());
     }
@@ -159,8 +159,8 @@ public class ItemTests {
         Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage);
         int expectedGearItemCount = 2;
         // Act
-        survivorService.loadItem(john.getId(), tool);
-        survivorService.loadItem(john.getId(), weapon);
+        survivorService.loadItem(KEYCLOAK_ID, john.getId(), tool);
+        survivorService.loadItem(KEYCLOAK_ID, john.getId(), weapon);
         // Assert - to check if he has it equipped
         assertEquals(expectedGearItemCount, john.getGear().size());
     }
@@ -172,7 +172,7 @@ public class ItemTests {
         Double overloadedToolWeight = 100.0;
         Tool tool = new Tool(toolName, overloadedToolWeight, toolDurability);
         // Act & assert
-        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), tool));
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(KEYCLOAK_ID, john.getId(), tool));
     }
 
     @Test
@@ -183,8 +183,8 @@ public class ItemTests {
         Double overloadedWeaponWeight = 10.0;
         Weapon weapon = new Weapon(weaponName, overloadedWeaponWeight, weaponDamage); // Too heavy
         // Act & assert
-        survivorService.loadItem(john.getId(), tool);
-        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), weapon));
+        survivorService.loadItem(KEYCLOAK_ID, john.getId(), tool);
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(KEYCLOAK_ID, john.getId(), weapon));
     }
 
 }

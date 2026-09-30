@@ -135,7 +135,7 @@ public class SurvivorServiceTest {
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
 
-        survivorService.addSkill(survivorId, Skill.Accuracy);
+        survivorService.addSkill(KEYCLOAK_ID, survivorId, Skill.Accuracy);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -147,7 +147,7 @@ public class SurvivorServiceTest {
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
-        survivorService.addSkill(survivorId, Skill.FieldMedicine);
+        survivorService.addSkill(KEYCLOAK_ID, survivorId, Skill.FieldMedicine);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -158,7 +158,7 @@ public class SurvivorServiceTest {
         survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
-        survivorService.removeSkill(survivorId, Skill.PsychologicalSupport);
+        survivorService.removeSkill(KEYCLOAK_ID, survivorId, Skill.PsychologicalSupport);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -173,7 +173,7 @@ public class SurvivorServiceTest {
 
         // ACT & ASSERT
         assertThrows(OverloadedException.class, () -> {
-            survivorService.loadItem(this.survivorId, item);
+            survivorService.loadItem(KEYCLOAK_ID, this.survivorId, item);
         });
     }
 
@@ -186,7 +186,7 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
 
         // ACT
-        survivorService.loadItem(survivor.getId(), item);
+        survivorService.loadItem(KEYCLOAK_ID, survivor.getId(), item);
         List<Item> actualGear = survivor.getGear();
 
         // ASSERT
@@ -196,14 +196,14 @@ public class SurvivorServiceTest {
     @Test
     void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.addSkill(unknownSurvivorId, Skill.Cooking);
+            survivorService.addSkill(KEYCLOAK_ID, unknownSurvivorId, Skill.Cooking);
         });
     }
 
     @Test
     void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.removeSkill(unknownSurvivorId, Skill.Cooking);
+            survivorService.removeSkill(KEYCLOAK_ID, unknownSurvivorId, Skill.Cooking);
         });
     }
 
@@ -212,14 +212,14 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.loadItem(unknownSurvivorId, item);
+            survivorService.loadItem(KEYCLOAK_ID, unknownSurvivorId, item);
         });
     }
 
     @Test
     void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.performAction(unknownSurvivorId, actionId);
+            survivorService.performAction(KEYCLOAK_ID, unknownSurvivorId, actionId);
         });
     }
 
@@ -228,7 +228,7 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
-            survivorService.performAction(survivor.getId(), unknownActionId);
+            survivorService.performAction(KEYCLOAK_ID, survivor.getId(), unknownActionId);
         });
     }
 

@@ -170,22 +170,34 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(KEYCLOAK_ID)
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+
         mockMvc.perform(post("/api/survivors/" + survivorId + "/skills")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"skill\":\"Accuracy\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).addSkill(survivorId, Skill.Accuracy);
+        verify(survivorService).addSkill(KEYCLOAK_ID, survivorId, Skill.Accuracy);
         verify(survivorService).findById(survivorId);
     }
 
     @Test
     void deleteSurvivorSkill_RemovesSkillFromSurvivor() throws Exception {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(KEYCLOAK_ID)
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+
         mockMvc.perform(delete("/api/survivors/" + survivorId + "/skills/PsychologicalSupport"))
                 .andExpect(status().isNoContent());
 
-        verify(survivorService).removeSkill(survivorId, Skill.PsychologicalSupport);
+        verify(survivorService).removeSkill(KEYCLOAK_ID, survivorId, Skill.PsychologicalSupport);
     }
 
     @Test
@@ -196,6 +208,12 @@ class SurvivorControllerTest {
         Tool medkit = new Tool(itemMedkit, itemMedkitWeight, itemMedkitDurability);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(KEYCLOAK_ID)
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+
         mockMvc.perform(post("/api/survivors/" + survivorId + "/items")
                         .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"type\":\"tool\",\"name\":\"" + itemMedkit
@@ -204,14 +222,20 @@ class SurvivorControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).loadItem(survivorId, medkit);
+        verify(survivorService).loadItem(KEYCLOAK_ID, survivorId, medkit);
     }
 
     @Test
     void performAction_ReturnsActionEffectiveness() throws Exception {
         double expectedEffectiveness = 72.5;
         ActionResult result = new ActionResult(null, null, expectedEffectiveness);
-        when(survivorService.performAction(survivorId, actionId)).thenReturn(result);
+        when(survivorService.performAction(KEYCLOAK_ID, survivorId, actionId)).thenReturn(result);
+
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(KEYCLOAK_ID)
+                .build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
         mockMvc.perform(post("/api/survivors/" + survivorId + "/actions/" + actionId))
                 .andExpect(status().isOk())
@@ -219,7 +243,7 @@ class SurvivorControllerTest {
                 .andExpect(jsonPath("$.actionId").value(actionId))
                 .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
-        verify(survivorService).performAction(survivorId, actionId);
+        verify(survivorService).performAction(KEYCLOAK_ID, survivorId, actionId);
     }
 
 }

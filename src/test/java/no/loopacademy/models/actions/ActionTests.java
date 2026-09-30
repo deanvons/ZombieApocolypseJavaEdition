@@ -130,7 +130,7 @@ public class ActionTests {
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
-        double actualEffectiveness = survivorService.performAction(survivorId, actionId).score();
+        double actualEffectiveness = survivorService.performAction(KEYCLOAK_ID, survivorId, actionId).score();
 
         assertEquals(expectedEffectiveness, actualEffectiveness);
     }
