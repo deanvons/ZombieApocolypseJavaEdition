@@ -30,9 +30,15 @@ public class ActionTests {
     private SurvivorRepository repository;
     private ActionService actionService;
     private ActionRepository actionRepository;
+    private String survivorName;
+    private SurvivorType survivorType;
+    private Long primaryActionId;
 
     @BeforeEach
     public void setup() {
+        survivorName = "GenericSurvivorName";
+        survivorType = SurvivorType.CAREGIVER;
+        primaryActionId = 1L;
         repository = mock(SurvivorRepository.class);
         actionRepository = mock(ActionRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
@@ -59,8 +65,8 @@ public class ActionTests {
                 action(4L, "Build Shelter", ActionType.Build, weights(0.4, 0.1, 0.0, 0.2, 0.1, 0.2, 0.0)),
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
-        when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
-        when(actionRepository.getReferenceById(1L)).thenReturn(actions.getFirst());
+        when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
+        when(actionRepository.getReferenceById(primaryActionId)).thenReturn(actions.getFirst());
 
         survivorService = new SurvivorService(repository, actionRepository);
 
@@ -105,10 +111,9 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        String expectedName = "Kevin";
-        survivorService.create(expectedName, SurvivorType.CAREGIVER);
+        survivorService.create(survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
-        long actionId = actionService.findById(1L).getId(); // Attack type action
+        long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
         double actualEffectiveness = survivorService.performAction(survivorId, actionId).score();
 

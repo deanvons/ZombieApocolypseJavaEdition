@@ -29,9 +29,8 @@ import no.loopacademy.services.UserProfileService;
 @WebMvcTest(UserProfileController.class)
 @Import(authConfig.class)
 class UserProfileControllerTest {
-    String displayName;
-    String expectedDisplayName;
-    Long userProfileId;
+    private String expectedDisplayName;
+    private Long userProfileId;
     private static final String KEYCLOAK_ID = "3f2a9c1e-0000-4000-8000-000000000001";
 
     @Autowired
@@ -44,8 +43,7 @@ class UserProfileControllerTest {
     private UserProfileMapper userProfileMapper;
 
     @BeforeEach
-    public void setup(){
-        displayName = "Kevin";
+    void setup(){
         expectedDisplayName = "Kevin";
         userProfileId = 1L;
     }
@@ -59,7 +57,7 @@ class UserProfileControllerTest {
     @Test
     void getMyProfileShouldLookUpByTokenSubject() throws Exception {
 
-        UserProfile profile = new UserProfile(KEYCLOAK_ID, displayName);
+        UserProfile profile = new UserProfile(KEYCLOAK_ID, expectedDisplayName);
         when(userProfileService.findByKeycloakId(KEYCLOAK_ID)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
             .thenReturn(new UserProfileResponse(userProfileId, expectedDisplayName, Instant.now(), null));
@@ -83,10 +81,10 @@ class UserProfileControllerTest {
     void createMyProfileShouldUseSubjectAndUsernameFromToken() throws Exception {
 
         String expectedLocation = "/api/profiles/me";
-        UserProfile profile = new UserProfile(KEYCLOAK_ID, displayName);
+        UserProfile profile = new UserProfile(KEYCLOAK_ID, expectedDisplayName);
         when(userProfileService.create(KEYCLOAK_ID, expectedDisplayName)).thenReturn(profile);
         when(userProfileMapper.toResponse(profile))
-            .thenReturn(new UserProfileResponse(userProfileId, displayName, Instant.now(), null));
+            .thenReturn(new UserProfileResponse(userProfileId, expectedDisplayName, Instant.now(), null));
 
         mockMvc.perform(post("/api/profiles/me")
                 .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID).claim("preferred_username", expectedDisplayName))))
@@ -97,7 +95,7 @@ class UserProfileControllerTest {
 
     @Test
     void createMyProfileTwiceShouldReturn409() throws Exception {
-        when(userProfileService.create(KEYCLOAK_ID, displayName))
+        when(userProfileService.create(KEYCLOAK_ID, expectedDisplayName))
             .thenThrow(new ResourceConflictException("A profile already exists for this user"));
 
         mockMvc.perform(post("/api/profiles/me")
