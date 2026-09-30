@@ -171,21 +171,21 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testAddSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+    void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.addSkill(99L, Skill.Cooking);
         });
     }
 
     @Test
-    void testRemoveSkillUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+    void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.removeSkill(99L, Skill.Cooking);
         });
     }
 
     @Test
-    void testLoadItemUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+    void loadItem_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         Item item = new Item("Medkit", 1.0);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
@@ -194,14 +194,14 @@ public class SurvivorServiceTest {
     }
 
     @Test
-    void testPerformActionUnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+    void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.performAction(99L, 1L);
         });
     }
 
     @Test
-    void testPerformActionUnknownAction_shouldThrowActionNotFoundException() {
+    void performAction_UnknownAction_shouldThrowActionNotFoundException() {
         Survivor survivor = survivorService.create("Tester", SurvivorType.CAREGIVER);
 
         assertThrows(ActionNotFoundException.class, () -> {
