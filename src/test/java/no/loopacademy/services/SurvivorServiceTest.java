@@ -187,7 +187,7 @@ public class SurvivorServiceTest {
 
     @Test
     void loadItem_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
-        Item item = new Item("Medkit", 1.0);
+        Item item = new Item(itemName, itemWeight);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.loadItem(99L, item);
@@ -203,7 +203,7 @@ public class SurvivorServiceTest {
 
     @Test
     void performAction_UnknownAction_shouldThrowActionNotFoundException() {
-        Survivor survivor = survivorService.create("Tester", SurvivorType.CAREGIVER);
+        Survivor survivor = survivorService.create(survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
             survivorService.performAction(survivor.getId(), 99L);
