@@ -12,4 +12,5 @@ public interface UserProfileMapper {
     // survivor.id is read from the lazy proxy without loading the survivor row
     @Mapping(target = "survivorId", source = "survivor.id")
     UserProfileResponse toResponse(UserProfile userProfile);
+    
 }

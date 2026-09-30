@@ -3,6 +3,7 @@ package no.loopacademy.controllers;
 import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -47,7 +48,14 @@ public class UserProfileController {
         }
         UserProfile profile = userProfileService.create(jwt.getSubject(), displayName);
         return ResponseEntity
-            .created(URI.create("/api/profiles/me"))
-            .body(userProfileMapper.toResponse(profile));
+                .created(URI.create("/api/profiles/me"))
+                .body(userProfileMapper.toResponse(profile));
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String getMethodName() {
+        return "it works admin guy";
+    }
+
 }

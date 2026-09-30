@@ -51,8 +51,15 @@ public class ActionTests {
     @Mock
     private AuditEntryService auditEntryService;
 
+    private String survivorName;
+    private SurvivorType survivorType;
+    private Long primaryActionId;
+
     @BeforeEach
     public void setup() {
+        survivorName = "GenericSurvivorName";
+        survivorType = SurvivorType.CAREGIVER;
+        primaryActionId = 1L;
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
         actionService = new ActionService(actionRepository);
@@ -68,8 +75,6 @@ public class ActionTests {
         when(repository.findAll()).thenAnswer(invocation -> new ArrayList<>(survivors.values()));
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-        when(repository.getReferenceById(any(Long.class)))
-                .thenAnswer(invocation -> survivors.get(invocation.getArgument(0)));
 
         List<Action> actions = List.of(
                 action(1L, "Attack", ActionType.Attack, weights(0.6, 0.2, 0.0, 0.0, 0.1, 0.1, 0.0)),
@@ -79,7 +84,6 @@ public class ActionTests {
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
         when(actionRepository.findById(1L)).thenReturn(Optional.of(actions.getFirst()));
-        when(actionRepository.getReferenceById(1L)).thenReturn(actions.getFirst());
         when(userProfileService.findByKeycloakId(KEYCLOAK_ID))
                 .thenReturn(new UserProfile(KEYCLOAK_ID, "tester"));
 
@@ -122,10 +126,9 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        String expectedName = "Kevin";
-        survivorService.create(KEYCLOAK_ID, expectedName, SurvivorType.CAREGIVER);
+        survivorService.create(KEYCLOAK_ID, survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
-        long actionId = actionService.findById(1L).getId(); // Attack type action
+        long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
         double actualEffectiveness = survivorService.performAction(survivorId, actionId).score();
 

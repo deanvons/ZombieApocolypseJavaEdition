@@ -1,5 +1,7 @@
 package no.loopacademy.services;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.OverloadedException;
 import java.util.List;
 
 import org.hibernate.Hibernate;
@@ -66,7 +68,8 @@ public class SurvivorService {
 
     @Transactional
     public void addSkill(Long id, Skill skill) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (!survivor.getSkills().contains(skill)) {
             survivor.getSkills().add(skill);
         }
@@ -74,18 +77,32 @@ public class SurvivorService {
 
     @Transactional
     public void removeSkill(Long id, Skill skill) {
-        survivorRepository.getReferenceById(id).getSkills().remove(skill);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        survivor.getSkills().remove(skill);
     }
 
     @Transactional
     public void loadItem(Long id, Item item) {
-        survivorRepository.getReferenceById(id).load(item);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        double currentLoad = survivor.getGear().stream()
+                .mapToDouble(Item::getWeight)
+                .sum();
+
+        if (currentLoad + item.getWeight() > survivor.getMaxLoad()) {
+            throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
+        }
+        survivor.getGear().add(item);
+
     }
 
     @Transactional(readOnly = true)
     public ActionResult performAction(Long id, Long actionId) {
-        Survivor survivor = survivorRepository.getReferenceById(id);
-        Action action = actionRepository.getReferenceById(actionId);
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        Action action = actionRepository.findById(actionId)
+                .orElseThrow(() -> new ActionNotFoundException("Action not found"));
         double effectiveness = 0.0;
 
         double strengthContrib = survivor.getAttributes().getStrength() * action.getAttributeWeights().getStrength();
