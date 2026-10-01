@@ -13,12 +13,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -28,6 +30,7 @@ import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.items.Item;
@@ -77,7 +80,7 @@ public class SurvivorServiceTest {
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
 
-        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
             if (survivor.getId() == null) {
                 survivor.setId(nextId.getAndIncrement());
@@ -146,7 +149,29 @@ public class SurvivorServiceTest {
         });
 
         assertEquals(firstSurvivor, user.getSurvivor());           // still has the first one
-        verify(repository, times(1)).save(any(Survivor.class));
+        verify(repository, times(1)).saveAndFlush(any(Survivor.class));
+    }
+
+    @Test
+    void create_NameAlreadyExists_shouldThrowException() {
+        when(repository.existsByName(survivorName)).thenReturn(true);
+        
+        assertThrows(ResourceConflictException.class, () -> {
+            survivorService.create(newUser(), survivorName, survivorType);
+        });
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void create_SimultaneousRequests_shouldThrowException() {
+        // Simulates two simultaneous first requests: the check passes, the unique constraint catches it
+        when(repository.existsByName(survivorName)).thenReturn(false);
+        when(repository.saveAndFlush(any(Survivor.class)))
+            .thenThrow(new DataIntegrityViolationException(""));
+
+        assertThrows(ResourceConflictException.class, () -> {
+            survivorService.create(newUser(), survivorName, survivorType);
+        });
     }
 
     @Test

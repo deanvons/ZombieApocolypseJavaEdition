@@ -1,13 +1,15 @@
 package no.loopacademy.services;
 
-import no.loopacademy.exceptions.ActionNotFoundException;
-import no.loopacademy.exceptions.OverloadedException;
 import java.util.List;
 
 import org.hibernate.Hibernate;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.actions.Action;
@@ -47,16 +49,26 @@ public class SurvivorService {
     // it has to be saved explicitly for the new survivor_id to be written.
     @Transactional
     public Survivor create(UserProfile user, String name, SurvivorType type) {
+        if (survivorRepository.existsByName(name)) {
+            throw new ResourceConflictException("A survivor with this name already exists");
+        }
         if (user.hasSurvivor()) {
-            throw new UserAlreadyHasSurvivorException("This user already has a survivor");
-        } //409 error
+                throw new UserAlreadyHasSurvivorException("This user already has a survivor");
+            } //409 error
+        try {
+            // saveAndFlush so a unique-constraint violation surfaces here, not at commit
+            
 
-        Survivor survivor = survivorRepository.save(new Survivor(name, type));
-        user.setSurvivor(survivor);
-        userProfileRepository.save(user);
-        auditEntryService.create(user, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
+            Survivor survivor = survivorRepository.saveAndFlush(new Survivor(name, type));
+            user.setSurvivor(survivor);
+            userProfileRepository.save(user);
+            auditEntryService.create(user, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
                 "Created " + type + " survivor " + name);
-        return survivor;
+            return survivor;
+        } catch (DataIntegrityViolationException e) {
+            // Two simultaneous first requests: both passed the check above, the database stopped the second
+            throw new ResourceConflictException("A survivor with this name already exists");
+        }
     }
 
     @Transactional(readOnly = true)
