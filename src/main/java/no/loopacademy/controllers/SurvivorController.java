@@ -30,6 +30,7 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.services.SurvivorService;
 import no.loopacademy.services.UserProfileService;
+
 @RestController
 @RequestMapping("/api/survivors")
 public class SurvivorController {
@@ -58,9 +59,8 @@ public class SurvivorController {
 
     @PostMapping
     public ResponseEntity<SurvivorResponse> createSurvivor(@AuthenticationPrincipal Jwt jwt,
-        @Valid @RequestBody SurvivorCreateRequest request
-    ) {
-        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); //404 if no profile
+            @Valid @RequestBody SurvivorCreateRequest request) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
         Survivor survivor = survivorService.create(user, request.name(), survivorMapper.toSurvivorType(request.type()));
         return ResponseEntity
             .created(URI.create("/api/survivors/" + survivor.getId()))
@@ -75,7 +75,7 @@ public class SurvivorController {
 
     @GetMapping("/me")
     public ResponseEntity<SurvivorResponse> getMySurvivor(@AuthenticationPrincipal Jwt jwt) {
-        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); //404 if no profile
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
         Survivor survivor = survivorService.findByUser(user);
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
     }
@@ -98,27 +98,36 @@ public class SurvivorController {
         return ResponseEntity.ok(survivor.getSkills());
     }
 
+    // One skill per request, e.g. {"skill": "Cooking"}
     @PostMapping("/{id}/skills")
-    public ResponseEntity<SurvivorResponse> addSkill(@PathVariable Long id, @Valid @RequestBody SkillAddRequest request) {
-        survivorService.addSkill(id, request.skill());
+    public ResponseEntity<SurvivorResponse> addSkill(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @Valid @RequestBody SkillAddRequest request) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        survivorService.addSkill(user, id, request.skill());
         return ResponseEntity.ok(survivorMapper.toResponse(survivorService.findById(id)));
     }
 
     @DeleteMapping("/{id}/skills/{skill}")
-    public ResponseEntity<Void> removeSkill(@PathVariable Long id, @PathVariable Skill skill) {
-        survivorService.removeSkill(id, skill);
+    public ResponseEntity<Void> removeSkill(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @PathVariable Skill skill) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        survivorService.removeSkill(user, id, skill);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/items")
-    public ResponseEntity<SurvivorResponse> loadItem(@PathVariable Long id, @Valid @RequestBody ItemLoadRequest request) {
-        survivorService.loadItem(id, itemMapper.toEntity(request));
+    public ResponseEntity<SurvivorResponse> loadItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @Valid @RequestBody ItemLoadRequest request) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        survivorService.loadItem(user, id, itemMapper.toEntity(request));
         return ResponseEntity.ok(survivorMapper.toResponse(survivorService.findById(id)));
     }
 
     @PostMapping("/{id}/actions/{actionId}")
-    public ResponseEntity<ActionResultResponse> performAction(@PathVariable Long id, @PathVariable Long actionId) {
-        ActionResult result = survivorService.performAction(id, actionId);
+    public ResponseEntity<ActionResultResponse> performAction(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @PathVariable Long actionId) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        ActionResult result = survivorService.performAction(user, id, actionId);
         return ResponseEntity.ok(new ActionResultResponse(id, actionId, result.score()));
     }
 

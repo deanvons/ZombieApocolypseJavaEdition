@@ -1,9 +1,9 @@
 package no.loopacademy.models.actions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 
 import no.loopacademy.services.ActionService;
+import no.loopacademy.services.AuditEntryService;
 import no.loopacademy.services.SurvivorService;
 import no.loopacademy.repositories.ActionRepository;
 import no.loopacademy.repositories.SurvivorRepository;
@@ -11,6 +11,12 @@ import no.loopacademy.repositories.UserProfileRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,12 +33,21 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ActionTests {
+    @InjectMocks
     private SurvivorService survivorService;
-    private UserProfileRepository userProfileRepository;
+    @Mock
     private SurvivorRepository repository;
     private ActionService actionService;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private UserProfileRepository userProfileRepository;
+    @Mock
+    private AuditEntryService auditEntryService;
+
     private String survivorName;
     private SurvivorType survivorType;
     private Long primaryActionId;
@@ -42,12 +57,11 @@ public class ActionTests {
         survivorName = "GenericSurvivorName";
         survivorType = SurvivorType.CAREGIVER;
         primaryActionId = 1L;
-        repository = mock(SurvivorRepository.class);
-        actionRepository = mock(ActionRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
+        actionService = new ActionService(actionRepository);
 
-        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
             if (survivor.getId() == null) {
                 survivor.setId(nextId.getAndIncrement());
@@ -67,12 +81,6 @@ public class ActionTests {
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
-
-        userProfileRepository = mock(UserProfileRepository.class);
-
-        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
-
-        actionService = new ActionService(actionRepository);
 
     }
 
@@ -113,11 +121,12 @@ public class ActionTests {
     @Test
     void shouldCalculateCorrectEffectivenessWithoutSkills() {
         double expectedEffectiveness = 29;
-        survivorService.create(newUser(), survivorName, survivorType);
+        UserProfile user = newUser();
+        survivorService.create(user, survivorName, survivorType);
         long survivorId = survivorService.findById(1L).getId();
         long actionId = actionService.findById(primaryActionId).getId(); // Attack type action
 
-        double actualEffectiveness = survivorService.performAction(survivorId, actionId).score();
+        double actualEffectiveness = survivorService.performAction(user, survivorId, actionId).score();
 
         assertEquals(expectedEffectiveness, actualEffectiveness);
     }

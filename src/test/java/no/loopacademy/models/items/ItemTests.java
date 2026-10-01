@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import no.loopacademy.repositories.ActionRepository;
@@ -17,17 +16,34 @@ import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
+import no.loopacademy.services.AuditEntryService;
 import no.loopacademy.services.SurvivorService;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class ItemTests {
+    @InjectMocks
     private SurvivorService survivorService;
-    private UserProfileRepository userProfileRepository;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private SurvivorRepository repository;
+    @Mock
+    private UserProfileRepository userProfileRepository;
+    @Mock
+    private AuditEntryService auditEntryService;
+
     private String survivorName;
     private SurvivorType survivorType;
     private String toolName;
@@ -48,12 +64,10 @@ public class ItemTests {
         weaponWeight = 5.0;
         weaponDamage = 10;
 
-        SurvivorRepository repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
-        actionRepository = mock(ActionRepository.class);
 
-        when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
             if (survivor.getId() == null) {
                 survivor.setId(nextId.getAndIncrement());
@@ -63,10 +77,6 @@ public class ItemTests {
         });
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> java.util.Optional.ofNullable(survivors.get(invocation.getArgument(0))));
-
-        userProfileRepository = mock(UserProfileRepository.class);
-
-        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
     }
 
     @Test
@@ -127,11 +137,12 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
+        UserProfile user = newUser();
+        Survivor john = survivorService.create(user, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         int expectedGearItemCount = 1;
         // Act
-        survivorService.loadItem(john.getId(), tool);
+        survivorService.loadItem(user, john.getId(), tool);
         // Assert - to check if he has it equipped
         assertEquals(expectedGearItemCount, john.getGear().size());
     }
@@ -139,13 +150,14 @@ public class ItemTests {
     @Test
     void shouldBeAbleToLoadItemsIfUnderWeightLimit() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
+        UserProfile user = newUser();
+        Survivor john = survivorService.create(user, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Weapon weapon = new Weapon(weaponName, weaponWeight, weaponDamage);
         int expectedGearItemCount = 2;
         // Act
-        survivorService.loadItem(john.getId(), tool);
-        survivorService.loadItem(john.getId(), weapon);
+        survivorService.loadItem(user, john.getId(), tool);
+        survivorService.loadItem(user, john.getId(), weapon);
         // Assert - to check if he has it equipped
         assertEquals(expectedGearItemCount, john.getGear().size());
     }
@@ -153,23 +165,25 @@ public class ItemTests {
     @Test
     void loadShouldFailWithHeavyItem() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
+        UserProfile user = newUser();
+        Survivor john = survivorService.create(user, survivorName, survivorType);
         Double overloadedToolWeight = 100.0;
         Tool tool = new Tool(toolName, overloadedToolWeight, toolDurability);
         // Act & assert
-        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), tool));
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(user, john.getId(), tool));
     }
 
     @Test
     void loadShouldFailWithHeavyItems() throws Exception {
         // Arrange
-        Survivor john = survivorService.create(newUser(), survivorName, survivorType);
+        UserProfile user = newUser();
+        Survivor john = survivorService.create(user, survivorName, survivorType);
         Tool tool = new Tool(toolName, toolWeight, toolDurability);
         Double overloadedWeaponWeight = 10.0;
         Weapon weapon = new Weapon(weaponName, overloadedWeaponWeight, weaponDamage); // Too heavy
         // Act & assert
-        survivorService.loadItem(john.getId(), tool);
-        assertThrows(OverloadedException.class, () -> survivorService.loadItem(john.getId(), weapon));
+        survivorService.loadItem(user, john.getId(), tool);
+        assertThrows(OverloadedException.class, () -> survivorService.loadItem(user, john.getId(), weapon));
     }
 
     // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
