@@ -2,6 +2,7 @@ package no.loopacademy.controllers;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
+import no.loopacademy.config.authConfig;
 import no.loopacademy.mappers.ItemMapperImpl;
 import no.loopacademy.mappers.SurvivorMapperImpl;
 import no.loopacademy.models.actions.ActionResult;
@@ -38,7 +40,7 @@ import no.loopacademy.services.UserProfileService;
 
 @WebMvcTest(SurvivorController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({SurvivorMapperImpl.class, ItemMapperImpl.class})   // real MapStruct mappers, so the JSON shape is the real one
+@Import({ SurvivorMapperImpl.class, ItemMapperImpl.class, authConfig.class }) // real MapStruct mappers, so the JSON
 class SurvivorControllerTest {
     private static final String KEYCLOAK_ID = "test-user";
     private String survivorName;
@@ -64,7 +66,7 @@ class SurvivorControllerTest {
 
 
     @BeforeEach
-    void setup(){
+    void setup() {
         survivorName = "Rick";
         expectedSurvivorName = survivorName;
         survivorType = SurvivorType.OUTLAW;
@@ -93,8 +95,8 @@ class SurvivorControllerTest {
         mockMvc.perform(get("/api/survivors"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(expectedSurvivorCount))
-            .andExpect(jsonPath("$[0].name").value(expectedSurvivorName))
-            .andExpect(jsonPath("$[0].type").value(expectedSurvivorTypeString));
+                .andExpect(jsonPath("$[0].name").value(expectedSurvivorName))
+                .andExpect(jsonPath("$[0].type").value(expectedSurvivorTypeString));
     }
 
     @Test 
@@ -117,9 +119,9 @@ class SurvivorControllerTest {
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/" + survivorId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.name").value(expectedSurvivorName))
-            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(expectedSurvivorName))
+                .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
     }
 
     @Test
@@ -128,13 +130,13 @@ class SurvivorControllerTest {
         int expectedStatusCode = 404;
         String expectedErrorMessage = "Survivor Not Found";
         when(survivorService.findById(survivorId))
-            .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
+                .thenThrow(new SurvivorNotFoundException(expectedErrorMessage));
 
         //Act + assert
         mockMvc.perform(get("/api/survivors/" + survivorId))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.status").value(expectedStatusCode))
-            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(expectedStatusCode))
+                .andExpect(jsonPath("$.message").value(expectedErrorMessage));
         
     }
 
@@ -174,19 +176,19 @@ class SurvivorControllerTest {
     void createSurvivor_ReturnsCreatedSurvivor() throws Exception {
         Survivor survivor = new Survivor(survivorName, survivorType);
         survivor.setId(survivorId);
-        
+
         when(survivorService.create(user, survivorName, survivorType)).thenReturn(survivor);
         loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"" + survivorName
-                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+                .content("{\"name\":\"" + survivorName
+                        + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
                 .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").value(survivorId))
+                .andExpect(jsonPath("$.id").value(survivorId))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.name").value(survivorName))
-            .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
+                .andExpect(jsonPath("$.type").value(expectedSurvivorTypeString));
 
         verify(survivorService).create(user, expectedSurvivorName, survivorType);
     }
@@ -215,22 +217,26 @@ class SurvivorControllerTest {
         Survivor survivor = new Survivor(survivorName, survivorType);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
+        loginAs(KEYCLOAK_ID);
+
         mockMvc.perform(post("/api/survivors/" + survivorId + "/skills")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"skill\":\"Accuracy\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).addSkill(survivorId, Skill.Accuracy);
+        verify(survivorService).addSkill(user, survivorId, Skill.Accuracy);
         verify(survivorService).findById(survivorId);
     }
 
     @Test
     void deleteSurvivorSkill_RemovesSkillFromSurvivor() throws Exception {
+        loginAs(KEYCLOAK_ID);
+
         mockMvc.perform(delete("/api/survivors/" + survivorId + "/skills/PsychologicalSupport"))
                 .andExpect(status().isNoContent());
 
-        verify(survivorService).removeSkill(survivorId, Skill.PsychologicalSupport);
+        verify(survivorService).removeSkill(user, survivorId, Skill.PsychologicalSupport);
     }
 
     @Test
@@ -241,30 +247,34 @@ class SurvivorControllerTest {
         Tool medkit = new Tool(itemMedkit, itemMedkitWeight, itemMedkitDurability);
         when(survivorService.findById(survivorId)).thenReturn(survivor);
 
+        loginAs(KEYCLOAK_ID);
+
         mockMvc.perform(post("/api/survivors/" + survivorId + "/items")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"type\":\"tool\",\"name\":\"" + itemMedkit
-                                + "\",\"weight\":" + itemMedkitWeight
-                                + ",\"durability\":" + itemMedkitDurability + "}"))
+                .content("{\"type\":\"tool\",\"name\":\"" + itemMedkit
+                        + "\",\"weight\":" + itemMedkitWeight
+                        + ",\"durability\":" + itemMedkitDurability + "}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(expectedSurvivorName));
 
-        verify(survivorService).loadItem(survivorId, medkit);
+        verify(survivorService).loadItem(user, survivorId, medkit);
     }
 
     @Test
     void performAction_ReturnsActionEffectiveness() throws Exception {
         double expectedEffectiveness = 72.5;
         ActionResult result = new ActionResult(null, null, expectedEffectiveness);
-        when(survivorService.performAction(survivorId, actionId)).thenReturn(result);
+        when(survivorService.performAction(user, survivorId, actionId)).thenReturn(result);
+
+        loginAs(KEYCLOAK_ID);
 
         mockMvc.perform(post("/api/survivors/" + survivorId + "/actions/" + actionId))
                 .andExpect(status().isOk())
-            .andExpect(jsonPath("$.survivorId").value(survivorId))
-            .andExpect(jsonPath("$.actionId").value(actionId))
-            .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
+                .andExpect(jsonPath("$.survivorId").value(survivorId))
+                .andExpect(jsonPath("$.actionId").value(actionId))
+                .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
-        verify(survivorService).performAction(survivorId, actionId);
+        verify(survivorService).performAction(user, survivorId, actionId);
     }
 
     // Security filters are off in this class (addFilters = false), so jwt() from spring-security-test

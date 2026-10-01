@@ -3,6 +3,7 @@ package no.loopacademy.services;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import no.loopacademy.exceptions.BusinessRuleException;
@@ -21,8 +22,9 @@ public class AuditEntryService {
         this.auditEntryRepository = auditEntryRepository;
     }
 
-    @Transactional
-    public AuditEntry create(UserProfile actor, AuditActionType actionType, String entityType, Long entityId, String details) {
+    @Transactional(propagation = Propagation.MANDATORY)
+    public AuditEntry create(UserProfile actor, AuditActionType actionType, String entityType, Long entityId,
+            String details) {
         if (actor == null) {
             throw new BusinessRuleException("actor is required");
         }
@@ -46,6 +48,6 @@ public class AuditEntryService {
     @Transactional(readOnly = true)
     public AuditEntry findById(Long id) {
         return auditEntryRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Audit entry not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Audit entry not found"));
     }
 }

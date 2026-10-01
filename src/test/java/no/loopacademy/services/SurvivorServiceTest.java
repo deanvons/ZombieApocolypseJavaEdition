@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,6 +19,12 @@ import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.OverloadedException;
@@ -31,11 +36,22 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class SurvivorServiceTest {
+    @InjectMocks
     private SurvivorService survivorService;
-    private UserProfileRepository userProfileRepository;
+    @Mock
     private SurvivorRepository repository;
+    @Mock
     private ActionRepository actionRepository;
+    @Mock
+    private AuditEntryService auditEntryService;
+    @Mock
+    private UserProfileRepository userProfileRepository;
+
+    private UserProfile actor;
+
     private String survivorName;
     private String secondSurvivorName;
     private SurvivorType survivorType;
@@ -58,10 +74,8 @@ public class SurvivorServiceTest {
         itemName = "GenericItemName";
         itemWeight = 5.0;
 
-        repository = mock(SurvivorRepository.class);
         Map<Long, Survivor> survivors = new LinkedHashMap<>();
         AtomicLong nextId = new AtomicLong(1);
-        actionRepository = mock(ActionRepository.class);
 
         when(repository.save(any(Survivor.class))).thenAnswer(invocation -> {
             Survivor survivor = invocation.getArgument(0);
@@ -75,10 +89,7 @@ public class SurvivorServiceTest {
         when(repository.findById(any(Long.class)))
                 .thenAnswer(invocation -> Optional.ofNullable(survivors.get(invocation.getArgument(0))));
         when(actionRepository.findById(any(Long.class))).thenReturn(Optional.empty());
-
-        userProfileRepository = mock(UserProfileRepository.class);
-
-        survivorService = new SurvivorService(repository, actionRepository, userProfileRepository);
+        actor = newUser();
     }
 
     @Test
@@ -157,7 +168,7 @@ public class SurvivorServiceTest {
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
 
-        survivorService.addSkill(survivorId, Skill.Accuracy);
+        survivorService.addSkill(actor, survivorId, Skill.Accuracy);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -169,7 +180,7 @@ public class SurvivorServiceTest {
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
-        survivorService.addSkill(survivorId, Skill.FieldMedicine);
+        survivorService.addSkill(actor, survivorId, Skill.FieldMedicine);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -180,7 +191,7 @@ public class SurvivorServiceTest {
         survivorService.create(newUser(), survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
-        survivorService.removeSkill(survivorId, Skill.PsychologicalSupport);
+        survivorService.removeSkill(actor, survivorId, Skill.PsychologicalSupport);
         List<Skill> actualOutput = survivorService.findById(survivorId).getSkills();
 
         assertEquals(expectedOutput, actualOutput);
@@ -195,7 +206,7 @@ public class SurvivorServiceTest {
 
         // ACT & ASSERT
         assertThrows(OverloadedException.class, () -> {
-            survivorService.loadItem(this.survivorId, item);
+            survivorService.loadItem(actor, this.survivorId, item);
         });
     }
 
@@ -208,7 +219,7 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         // ACT
-        survivorService.loadItem(survivor.getId(), item);
+        survivorService.loadItem(actor, survivor.getId(), item);
         List<Item> actualGear = survivor.getGear();
 
         // ASSERT
@@ -218,14 +229,14 @@ public class SurvivorServiceTest {
     @Test
     void addSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.addSkill(unknownSurvivorId, Skill.Cooking);
+            survivorService.addSkill(actor, unknownSurvivorId, Skill.Cooking);
         });
     }
 
     @Test
     void removeSkill_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.removeSkill(unknownSurvivorId, Skill.Cooking);
+            survivorService.removeSkill(actor, unknownSurvivorId, Skill.Cooking);
         });
     }
 
@@ -234,14 +245,14 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
 
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.loadItem(unknownSurvivorId, item);
+            survivorService.loadItem(actor, unknownSurvivorId, item);
         });
     }
 
     @Test
     void performAction_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
         assertThrows(SurvivorNotFoundException.class, () -> {
-            survivorService.performAction(unknownSurvivorId, actionId);
+            survivorService.performAction(actor, unknownSurvivorId, actionId);
         });
     }
 
@@ -250,7 +261,7 @@ public class SurvivorServiceTest {
         Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
-            survivorService.performAction(survivor.getId(), unknownActionId);
+            survivorService.performAction(actor, survivor.getId(), unknownActionId);
         });
     }
 
