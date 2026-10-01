@@ -19,10 +19,12 @@ import no.loopacademy.dtos.request.ItemLoadRequest;
 import no.loopacademy.dtos.request.SkillAddRequest;
 import no.loopacademy.dtos.request.SurvivorCreateRequest;
 import no.loopacademy.dtos.response.ActionResultResponse;
+import no.loopacademy.dtos.response.ItemResponse;
 import no.loopacademy.dtos.response.SurvivorResponse;
 import no.loopacademy.mappers.ItemMapper;
 import no.loopacademy.mappers.SurvivorMapper;
 import no.loopacademy.models.actions.ActionResult;
+import no.loopacademy.models.attributes.SurvivorAttributes;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.userprofile.UserProfile;
@@ -76,6 +78,24 @@ public class SurvivorController {
         UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
         Survivor survivor = survivorService.findByUser(user);
         return ResponseEntity.ok(survivorMapper.toResponse(survivor));
+    }
+
+    @GetMapping("/{id}/gear")
+    public ResponseEntity<List<ItemResponse>> getSurvivorGear(@PathVariable Long id) {
+        Survivor survivor = survivorService.findById(id);
+        return ResponseEntity.ok(itemMapper.toResponse(survivor.getGear()));
+    }
+
+    @GetMapping("/{id}/attributes")
+    public ResponseEntity<SurvivorAttributes> getSurvivorAttributes(@PathVariable Long id) {
+        Survivor survivor = survivorService.findById(id);
+        return ResponseEntity.ok(survivor.getAttributes());
+    }
+
+    @GetMapping("/{id}/skills")
+    public ResponseEntity<List<Skill>> getSurvivorSkills(@PathVariable Long id) {
+        Survivor survivor = survivorService.findById(id);
+        return ResponseEntity.ok(survivor.getSkills());
     }
 
     // One skill per request, e.g. {"skill": "Cooking"}
