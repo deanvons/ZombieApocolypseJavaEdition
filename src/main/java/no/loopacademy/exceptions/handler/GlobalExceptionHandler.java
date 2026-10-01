@@ -5,13 +5,18 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -28,10 +33,11 @@ import no.loopacademy.exceptions.ResourceNotFoundException;
  *   ResourceConflictException        → 409
  *   AccessDeniedException,
  *   AuthenticationException          → rethrown, Spring Security returns 401/403
+ *   Spring MVC exceptions            → their standard status, e.g. 404 unknown path, 405 wrong method
  *   Exception (anything else)        → 500
  */
 @RestControllerAdvice 
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     
@@ -52,24 +58,32 @@ public class GlobalExceptionHandler {
      * Handles error thrown by the controller layer when @Valid fails on a request DTO.
      * Returns 400 BAD_REQUEST response, with invalid fields joined into the message.
      * e.g. {@code name: must not be blank; weight: must be positive}
-     * @param e exception to handle. 
+     * Overrides the hook in ResponseEntityExceptionHandler, which already has an @ExceptionHandler for this
+     * exception. Adding our own @ExceptionHandler for it would make Spring fail on startup (ambiguous handler).
+     * @param ex exception to handle
+     * @param headers headers from ResponseEntityExceptionHandler
+     * @param status status from ResponseEntityExceptionHandler (400)
+     * @param request the current request
      * @return ResponseEntity(status, response)
      */
-    @ExceptionHandler (MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleArgumentNotValid(
-        MethodArgumentNotValidException e
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+        MethodArgumentNotValidException ex,
+        HttpHeaders headers,
+        HttpStatusCode status,
+        WebRequest request
     ) {
-        
         //For each field, add the name of the field that is wrong to the error message.
-        String errorMsg = e.getBindingResult()
+        String errorMsg = ex.getBindingResult()
         .getFieldErrors()
         .stream()
         .map(field -> field.getField() + ": " + field.getDefaultMessage())
         .collect(Collectors.joining("; "));
 
         return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(new ErrorResponse(400, errorMsg));
+            .status(status)
+            .headers(headers)
+            .body(new ErrorResponse(status.value(), errorMsg));
     }
 
     /**
@@ -124,5 +138,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ErrorResponse(500, "Internal server error"));
+    }
+
+    /**
+     * Handles Spring MVC's own exceptions (e.g. wrong HTTP method, unknown path, malformed JSON, wrong type in the
+     * path), which ResponseEntityExceptionHandler gives their standard status (400/404/405/415...). It builds the
+     * response first, and we convert its ProblemDetail body into our {status, message} shape.
+     * Uses the ProblemDetail's detail as the message, never ex.getMessage(), since that can contain class names
+     * and parser details. Keeps the headers, e.g. Allow on 405 and Accept on 415.
+     * @param ex exception to handle
+     * @param body ProblemDetail from ResponseEntityExceptionHandler, or null if it should create one
+     * @param headers headers to keep in the response
+     * @param statusCode status from ResponseEntityExceptionHandler
+     * @param request the current request
+     * @return ResponseEntity(status, response), or null if the response is already committed
+     */
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(
+        Exception ex,
+        Object body,
+        HttpHeaders headers,
+        HttpStatusCode statusCode,
+        WebRequest request
+    ) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(ex, body, headers, statusCode, request);
+        if (response == null) {
+            return null;
+        }
+
+        String message = response.getBody() instanceof ProblemDetail problemDetail && problemDetail.getDetail() != null
+            ? problemDetail.getDetail()
+            : "Request could not be processed";
+
+        return ResponseEntity
+            .status(response.getStatusCode())
+            .headers(response.getHeaders())
+            .body(new ErrorResponse(response.getStatusCode().value(), message));
     }
 }
