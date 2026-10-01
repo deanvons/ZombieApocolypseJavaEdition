@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.ForbiddenException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
@@ -188,7 +189,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_NewSkill_shouldAddSkill() {
-        survivorService.create(newUser(), survivorName, survivorType);
+        survivorService.create(actor, survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
         expectedOutput.add(Skill.Accuracy);
@@ -201,7 +202,7 @@ public class SurvivorServiceTest {
 
     @Test
     void addSkill_SkillAlreadyKnown_shouldNotChangeSkills() {
-        survivorService.create(newUser(), survivorName, survivorType);
+        survivorService.create(actor, survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(
                 List.of(Skill.FieldMedicine, Skill.PsychologicalSupport, Skill.Cooking));
 
@@ -213,7 +214,7 @@ public class SurvivorServiceTest {
 
     @Test
     void removeSkill_ExistingSkill_shouldRemoveSkill() {
-        survivorService.create(newUser(), survivorName, survivorType);
+        survivorService.create(actor, survivorName, survivorType);
         List<Skill> expectedOutput = new ArrayList<>(List.of(Skill.FieldMedicine, Skill.Cooking));
 
         survivorService.removeSkill(actor, survivorId, Skill.PsychologicalSupport);
@@ -226,7 +227,7 @@ public class SurvivorServiceTest {
     void loadItem_ItemTooHeavy_shouldThrowException() {
         // ARRANGE
         Double overloadedItemWeight = 500000.0;
-        survivorService.create(newUser(), survivorName, survivorType);
+        survivorService.create(actor, survivorName, survivorType);
         Item item = new Item(itemName, overloadedItemWeight);
 
         // ACT & ASSERT
@@ -241,7 +242,7 @@ public class SurvivorServiceTest {
         Item item = new Item(itemName, itemWeight);
         List<Item> expectedGearList = new ArrayList<>();
         expectedGearList.add(item);
-        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
 
         // ACT
         survivorService.loadItem(actor, survivor.getId(), item);
@@ -283,15 +284,30 @@ public class SurvivorServiceTest {
 
     @Test
     void performAction_UnknownAction_shouldThrowActionNotFoundException() {
-        Survivor survivor = survivorService.create(newUser(), survivorName, survivorType);
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
 
         assertThrows(ActionNotFoundException.class, () -> {
             survivorService.performAction(actor, survivor.getId(), unknownActionId);
         });
     }
 
+    @Test
+    void loadItem_OtherUsersSurvivor_shouldThrowForbiddenException() {
+        Survivor survivor = survivorService.create(otherUser(), survivorName, survivorType);
+        Item item = new Item(itemName, itemWeight);
+
+        assertThrows(ForbiddenException.class, () ->
+                survivorService.loadItem(actor, survivor.getId(), item));
+
+        assertEquals(List.of(), survivor.getGear());
+    }
+
     // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
     private UserProfile newUser() {
         return new UserProfile("test-user", "tester");
+    }
+
+    private UserProfile otherUser() {
+        return new UserProfile("other-test-user", "other tester");
     }
 }

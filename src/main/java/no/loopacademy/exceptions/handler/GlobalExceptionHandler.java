@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import no.loopacademy.exceptions.BusinessRuleException;
+import no.loopacademy.exceptions.ForbiddenException;
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.ResourceNotFoundException;
 
@@ -84,5 +85,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(409, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException e) {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse(403, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
     }
 }
