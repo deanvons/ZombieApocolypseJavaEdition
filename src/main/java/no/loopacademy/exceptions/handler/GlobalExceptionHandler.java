@@ -3,11 +3,15 @@ package no.loopacademy.exceptions.handler;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import no.loopacademy.exceptions.BusinessRuleException;
 import no.loopacademy.exceptions.ResourceConflictException;
@@ -20,9 +24,13 @@ import no.loopacademy.exceptions.ResourceNotFoundException;
  *   MethodArgumentNotValidException  → 400 (@Valid failures)
  *   BusinessRuleException            → 400
  *   ResourceConflictException        → 409
+ *   Exception (anything else)        → 500
  */
 @RestControllerAdvice 
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    
     /**
      * Handles ResourceNotFoundException thrown by the service layer when a look-up does not return any existing
      * item. Returns 404 NOT_FOUND response. 
@@ -84,5 +92,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(409, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
+    }
+
+    /**
+     * Catch-all for any exception not handled by a more specific handler above. Returns 500 INTERNAL_SERVER_ERROR
+     * response, so the client still gets the {status, message} shape. Uses a generic message and never
+     * e.getMessage(), since internal messages can leak details such as SQL or class names.
+     * Also logs the full exception, since it is not logged anywhere else once handled here.
+     * @param e exception to handle
+     * @param request the failed request, used only for logging the method and path
+     * @return ResponseEntity(status, response)
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception e, HttpServletRequest request) {
+        log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), e);
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse(500, "Internal server error"));
     }
 }

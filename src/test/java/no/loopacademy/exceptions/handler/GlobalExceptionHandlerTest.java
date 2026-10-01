@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -72,6 +73,36 @@ public class GlobalExceptionHandlerTest {
 
         // ASSERT
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(expectedBody, response.getBody());
+    }
+
+    @Test
+    void testHandleGeneric_nullPointerException_shouldReturn500WithGenericMessage() {
+        // ARRANGE
+        NullPointerException exception = new NullPointerException();
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/survivors/1");
+        ErrorResponse expectedBody = new ErrorResponse(500, "Internal server error");
+
+        // ACT
+        ResponseEntity<ErrorResponse> response = handler.handleGeneric(exception, request);
+
+        // ASSERT
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(expectedBody, response.getBody());
+    }
+
+    @Test
+    void testHandleGeneric_runtimeExceptionWithSecret_shouldReturn500WithGenericMessage() {
+        // ARRANGE
+        RuntimeException exception = new RuntimeException("Failed to run SQL: select * from survivor");
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/survivors");
+        ErrorResponse expectedBody = new ErrorResponse(500, "Internal server error");
+
+        // ACT
+        ResponseEntity<ErrorResponse> response = handler.handleGeneric(exception, request);
+
+        // ASSERT
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals(expectedBody, response.getBody());
     }
 }
