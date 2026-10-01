@@ -103,6 +103,13 @@ public class SurvivorService {
     }
 
     @Transactional
+    public void deleteSurvivorById(Long id){
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        survivorRepository.delete(survivor);
+    }
+
+    @Transactional
     public void addSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
