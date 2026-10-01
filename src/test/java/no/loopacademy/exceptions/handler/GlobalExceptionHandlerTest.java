@@ -1,10 +1,14 @@
 package no.loopacademy.exceptions.handler;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -74,6 +78,18 @@ public class GlobalExceptionHandlerTest {
         // ASSERT
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals(expectedBody, response.getBody());
+    }
+
+    @Test
+    void testHandleSecurityException_accessDeniedException_shouldRethrowSameException() {
+        // ARRANGE
+        AccessDeniedException exception = new AccessDeniedException("Access is denied");
+
+        // ACT + ASSERT
+        AccessDeniedException thrown = assertThrows(AccessDeniedException.class, () -> { 
+            handler.handleSecurityException(exception);
+        });
+        assertSame(exception, thrown);
     }
 
     @Test

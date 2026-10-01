@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +26,8 @@ import no.loopacademy.exceptions.ResourceNotFoundException;
  *   MethodArgumentNotValidException  → 400 (@Valid failures)
  *   BusinessRuleException            → 400
  *   ResourceConflictException        → 409
+ *   AccessDeniedException,
+ *   AuthenticationException          → rethrown, Spring Security returns 401/403
  *   Exception (anything else)        → 500
  */
 @RestControllerAdvice 
@@ -92,6 +96,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(409, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
+    }
+
+    /**
+     * Rethrows Spring Security exceptions (e.g. from @PreAuthorize) so they reach Spring Security's own filters,
+     * which turn them into 401 UNAUTHORIZED or 403 FORBIDDEN. Without this, the catch-all below would turn them
+     * into 500. Re-throwing the same exception tells Spring that this handler does not handle it.
+     * @param e exception to rethrow
+     */
+    @ExceptionHandler({AccessDeniedException.class, AuthenticationException.class})
+    public void handleSecurityException(RuntimeException e) {
+        throw e;
     }
 
     /**
