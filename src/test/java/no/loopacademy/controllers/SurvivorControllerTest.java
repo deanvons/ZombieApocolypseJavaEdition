@@ -24,6 +24,7 @@ import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.config.authConfig;
@@ -203,6 +204,24 @@ class SurvivorControllerTest {
             .thenThrow(new UserAlreadyHasSurvivorException(expectedErrorMessage));
         loginAs(KEYCLOAK_ID);
         
+        mockMvc.perform(post("/api/survivors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"" + survivorName
+                                + "\",\"type\":\"" + expectedSurvivorTypeString + "\"}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.status").value(expectedStatusCode))
+            .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+    }
+
+    @Test
+    void createSurvivorShouldReturn409IfNameExists() throws Exception {
+        //Arrange
+        int expectedStatusCode = 409;
+        String expectedErrorMessage = "A survivor with this name already exists";
+        when(survivorService.create(user, survivorName, survivorType))
+            .thenThrow(new ResourceConflictException(expectedErrorMessage));
+        loginAs(KEYCLOAK_ID);
+        //Act + assert
         mockMvc.perform(post("/api/survivors")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"" + survivorName
