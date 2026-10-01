@@ -14,6 +14,7 @@ import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
+import no.loopacademy.models.audit.AuditActionType;
 import no.loopacademy.models.items.Item;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
@@ -28,17 +29,19 @@ public class SurvivorService {
 
     private final SurvivorRepository survivorRepository;
     private final ActionRepository actionRepository;
-
     private final UserProfileRepository userProfileRepository;
+    private final AuditEntryService auditEntryService;
 
     public SurvivorService(
-        SurvivorRepository survivorRepository, 
+        SurvivorRepository survivorRepository,
         ActionRepository actionRepository,
-        UserProfileRepository userProfileRepository
+        UserProfileRepository userProfileRepository,
+        AuditEntryService auditEntryService
     ) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
         this.userProfileRepository = userProfileRepository;
+        this.auditEntryService = auditEntryService;
     }
 
     // The controller looks up the user (from the JWT) and passes it in.
@@ -59,6 +62,8 @@ public class SurvivorService {
             Survivor survivor = survivorRepository.saveAndFlush(new Survivor(name, type));
             user.setSurvivor(survivor);
             userProfileRepository.save(user);
+            auditEntryService.create(user, AuditActionType.SURVIVOR_CREATED, "Survivor", survivor.getId(),
+                "Created " + type + " survivor " + name);
             return survivor;
         } catch (DataIntegrityViolationException e) {
             // Two simultaneous first requests: both passed the check above, the database stopped the second
@@ -98,23 +103,29 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void addSkill(Long id, Skill skill) {
+    public void addSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         if (!survivor.getSkills().contains(skill)) {
             survivor.getSkills().add(skill);
+            auditEntryService.create(actor, AuditActionType.SKILL_ADDED, "Survivor", id,
+                    "Skill " + skill.name() + " added to survivor " + survivor.getName());
         }
     }
 
     @Transactional
-    public void removeSkill(Long id, Skill skill) {
+    public void removeSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
-        survivor.getSkills().remove(skill);
+        if (survivor.getSkills().contains(skill)) {
+            survivor.getSkills().remove(skill);
+            auditEntryService.create(actor, AuditActionType.SKILL_REMOVED, "Survivor", id,
+                    "Skill " + skill.name() + " removed from survivor " + survivor.getName());
+        }
     }
 
     @Transactional
-    public void loadItem(Long id, Item item) {
+    public void loadItem(UserProfile actor, Long id, Item item) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         double currentLoad = survivor.getGear().stream()
@@ -125,11 +136,12 @@ public class SurvivorService {
             throw new OverloadedException("Survivor with id: " + id + ", tried to load item with too much weight.");
         }
         survivor.getGear().add(item);
-
+        auditEntryService.create(actor, AuditActionType.ITEM_LOADED, "Survivor", id,
+                "Item " + item.getName() + " loaded to survivor " + survivor.getName());
     }
 
-    @Transactional(readOnly = true)
-    public ActionResult performAction(Long id, Long actionId) {
+    @Transactional
+    public ActionResult performAction(UserProfile actor, Long id, Long actionId) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
         Action action = actionRepository.findById(actionId)
@@ -150,7 +162,10 @@ public class SurvivorService {
         effectiveness = (strengthContrib + agilityContrib + trustContrib + intelligenceContrib
                 + courageContrib + enduranceContrib + leadershipContrib) * 10;
 
-        return new ActionResult(survivor, action, effectiveness);
+        ActionResult result = new ActionResult(survivor, action, effectiveness);
+        auditEntryService.create(actor, AuditActionType.ACTION_PERFORMED, "Survivor", id,
+                "Performed action " + action.getName() + " by survivor " + survivor.getName());
+        return result;
     }
 
 }
