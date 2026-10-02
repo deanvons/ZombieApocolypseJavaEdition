@@ -44,9 +44,9 @@ public class ActionService {
             ),
 
             action(
-                "Scavenge",
-                ActionType.Scavenge,
-                "Find useful supplies",
+                "Forage",
+                ActionType.Forage,
+                "Search for food and other necessities",
                 "Location",
                 weights(0.1, 0.4, 0.1, 0.3, 0.0, 0.1, 0.0)
             ),

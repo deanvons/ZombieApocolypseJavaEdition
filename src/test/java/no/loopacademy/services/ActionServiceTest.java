@@ -34,7 +34,7 @@ public class ActionServiceTest {
         List<Action> actions = List.of(
                 action(primaryActionId, primaryActionName, primaryActionType),
                 action(2L, "Heal", ActionType.Heal),
-                action(3L, "Scavenge", ActionType.Scavenge),
+                action(3L, "Forage", ActionType.Forage),
                 action(4L, "Build Shelter", ActionType.Build),
                 action(5L, "Persuade", ActionType.Persuade));
 
