@@ -13,7 +13,7 @@ This is a feature implementation, not a request for a design proposal only. Expl
 - There is one shared camp for the initial release. Players who qualify as camp members are in that same camp.
 - Camp chat is available only to authenticated camp members.
 - The sender shown in chat is the in-game survivor name.
-- A player sees messages created from the start of their current Camp visit onward. A player does not receive messages from before entering Camp.
+- On entering Camp, a player sees the camp's latest messages, including ones sent before they arrived. (Changed 2026-10-02 from the original rule, where history started at the visit.)
 - Entering Camp starts a new visit. Refreshing the page starts a new visit too.
 - Other camp members should receive new messages near-real-time.
 - Messages should be stored in SQL and retained; do not implement user message deletion or moderation in this first release.
@@ -89,7 +89,7 @@ GET /api/camp/visits/{visitId}/messages?limit=50&cursor=<opaque-cursor>
 Authorization: Bearer <access-token>
 ```
 
-Only return messages in the visit’s camp whose server `createdAt` is at or after the visit’s server-recorded `startedAt`. Never accept a client-provided timestamp as the authorization boundary. The visit must belong to the authenticated caller and must not grant access to another camp.
+Without a cursor, return the latest messages in the visit’s camp, up to the page limit, in chronological order. With a cursor, only return messages after it whose server `createdAt` is at or after the visit’s server-recorded `startedAt`. Never accept a client-provided timestamp as the authorization boundary. The visit must belong to the authenticated caller and must not grant access to another camp.
 
 Use stable ordering by `(createdAt, id)` and bounded cursor pagination. Example response:
 
@@ -246,8 +246,8 @@ Add focused tests following the backend repository’s conventions. At minimum c
 ### Visit boundary
 
 - Creating a visit returns a server-generated ID and start time.
-- A visit sees messages created at or after its own start time.
-- A visit does not see messages created before it started.
+- Entering Camp (no cursor) returns the camp's latest messages, including ones sent before the visit started.
+- Reading with a cursor only returns messages at or after the visit's start time.
 - Refresh/new entry creates a new visit boundary.
 - Supplying a forged timestamp or another user’s visit ID cannot widen the history window.
 - Pagination is stable and has no gaps or duplicates for messages with tied timestamps.
@@ -290,7 +290,7 @@ Do not call the feature complete until all applicable items are true:
 
 - [ ] The real database stores messages and server-owned visit boundaries.
 - [ ] The authenticated identity determines survivor, camp, and sender name.
-- [ ] A new Camp entry gets a new server visit; history is limited to that visit’s start time.
+- [ ] A new Camp entry gets a new server visit and shows the camp’s latest messages.
 - [ ] A client cannot select another sender, camp, visit owner, or history start time.
 - [ ] Messages are delivered near-real-time to authorized current camp visitors.
 - [ ] Realtime delivery is backed by persisted messages and has a documented reconnect recovery path.

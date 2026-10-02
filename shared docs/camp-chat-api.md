@@ -33,7 +33,7 @@ Every call creates a distinct visit, including a page refresh. Visits expire 24 
 }
 ```
 
-`limit` defaults to 50 and must be between 1 and 100. The opaque cursor advances by `(createdAt, id)`; send the returned cursor unchanged to fetch the next page. History is constrained by the server-recorded visit start, with no client timestamp accepted.
+`limit` defaults to 50 and must be between 1 and 100. Without a cursor (entering Camp), the response holds the camp's latest `limit` messages in chronological order, including ones sent before the visit started, and `nextCursor` is `null`; older messages are not paged. With a cursor, the response holds newer messages after it, from the server-recorded visit start on. The opaque cursor advances by `(createdAt, id)`; send the returned `nextCursor` unchanged to fetch the next newer page. No client timestamp is accepted.
 
 `POST /api/camp/visits/{visitId}/messages` accepts `{ "content": "..." }` and returns the persisted message with `201`. Content is trimmed at both ends, must contain non-whitespace text, and may contain at most 500 Unicode code points after trimming. Supplementary characters such as emoji count as one code point each. Internal whitespace is preserved. Content is stored and returned as plain text; render it as text, never as HTML.
 
@@ -58,7 +58,7 @@ There is no existing rate-limiting mechanism in this backend. The initial implem
 In `camp-chat-service.js`, replace the in-memory mock with:
 
 1. `POST /api/camp/visits` on each Camp entry; retain `visitId` in page/tab state.
-2. `GET /api/camp/visits/{visitId}/messages` with the bearer header; follow `nextCursor` for older pages.
+2. `GET /api/camp/visits/{visitId}/messages` with the bearer header and no cursor on Camp entry, to load the latest messages.
 3. `POST /api/camp/visits/{visitId}/messages` with `{content}` and the bearer header.
 4. An authenticated fetch-based SSE client at `/api/camp/visits/{visitId}/events`; handle `message.created`, store each event ID as the latest cursor, and reconnect by fetching after that cursor before reopening the stream.
 

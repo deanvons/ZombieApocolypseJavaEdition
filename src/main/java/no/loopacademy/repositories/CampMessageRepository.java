@@ -16,6 +16,13 @@ public interface CampMessageRepository extends JpaRepository<CampMessage, UUID> 
     @Query("""
             select message from CampMessage message
             where message.camp.id = :campId
+            order by message.createdAt desc, message.id desc
+            """)
+    List<CampMessage> findLatestMessages(@Param("campId") String campId, Pageable pageable);
+
+    @Query("""
+            select message from CampMessage message
+            where message.camp.id = :campId
               and message.createdAt >= :startedAt
               and (:cursorTime is null
                    or message.createdAt > :cursorTime
