@@ -4,6 +4,9 @@ import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.UserProfileNotFoundException;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.UserProfileRepository;
+
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,4 +45,10 @@ public class UserProfileService {
         return userProfileRepository.findByKeycloakId(keycloakId)
                 .orElseThrow(() -> new UserProfileNotFoundException("No profile found for this user"));
     }
+
+    @Transactional(readOnly = true)
+    public List<UserProfile> findAll() {
+        return userProfileRepository.findAll();
+    }
+
 }

@@ -1,6 +1,7 @@
 package no.loopacademy.controllers;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -54,8 +55,10 @@ public class UserProfileController {
 
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public String getMethodName() {
-        return "it works admin guy";
+    public ResponseEntity<List<UserProfileResponse>> getAllSurvivors(@AuthenticationPrincipal Jwt jwt) {
+        List<UserProfile> userProfiles = userProfileService.findAll();
+        return ResponseEntity.ok(userProfileMapper.toResponses(userProfiles));
+
     }
 
 }
