@@ -1,5 +1,6 @@
 package no.loopacademy.services;
 
+import java.sql.SQLException;
 import java.util.List;
 
 import no.loopacademy.exceptions.*;
@@ -71,8 +72,20 @@ public class SurvivorService {
             return survivor;
         } catch (DataIntegrityViolationException e) {
             // Two simultaneous first requests: both passed the check above, the database stopped the second
-            throw new ResourceConflictException("A survivor with this name already exists");
+            // with the unique constraint on name. Any other database error is not a name conflict, so let it through.
+            if (isUniqueViolation(e)) {
+                throw new ResourceConflictException("A survivor with this name already exists");
+            }
+            throw e;
         }
+    }
+
+    // PostgreSQL's SQLSTATE for a unique constraint violation
+    private static final String UNIQUE_VIOLATION = "23505";
+
+    private static boolean isUniqueViolation(DataIntegrityViolationException e) {
+        return e.getMostSpecificCause() instanceof SQLException sqlException
+            && UNIQUE_VIOLATION.equals(sqlException.getSQLState());
     }
 
     @Transactional(readOnly = true)
