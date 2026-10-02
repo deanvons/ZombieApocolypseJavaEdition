@@ -1,5 +1,6 @@
 package no.loopacademy.services;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -184,9 +185,21 @@ public class SurvivorServiceTest {
         // Simulates two simultaneous first requests: the check passes, the unique constraint catches it
         when(repository.existsByName(survivorName)).thenReturn(false);
         when(repository.saveAndFlush(any(Survivor.class)))
-            .thenThrow(new DataIntegrityViolationException(""));
+            .thenThrow(new DataIntegrityViolationException("", new SQLException("duplicate name", "23505")));
 
         assertThrows(ResourceConflictException.class, () -> {
+            survivorService.create(newUser(), survivorName, survivorType);
+        });
+    }
+
+    @Test
+    void create_OtherDatabaseError_shouldNotBeReportedAsNameConflict() {
+        // e.g. an outdated CHECK constraint on survivor.type (SQLSTATE 23514) must not look like a taken name
+        when(repository.existsByName(survivorName)).thenReturn(false);
+        when(repository.saveAndFlush(any(Survivor.class)))
+            .thenThrow(new DataIntegrityViolationException("", new SQLException("check violation", "23514")));
+
+        assertThrows(DataIntegrityViolationException.class, () -> {
             survivorService.create(newUser(), survivorName, survivorType);
         });
     }
