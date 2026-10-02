@@ -40,7 +40,7 @@ public class Survivor {
     @Enumerated(EnumType.STRING)
     private List<Skill> skills = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "survivor_id")
     private List<Item> gear = new ArrayList<>();
 

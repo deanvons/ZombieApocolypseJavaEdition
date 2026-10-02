@@ -123,6 +123,15 @@ public class SurvivorController {
         return ResponseEntity.ok(survivorMapper.toResponse(survivorService.findById(id)));
     }
 
+    @DeleteMapping("/{id}/items/{itemId}")
+    public ResponseEntity<Void> removeItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+                                           @PathVariable Long itemId) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        survivorService.removeItem(user, id, itemId);
+        return ResponseEntity.noContent().build();
+    }
+
+
     @PostMapping("/{id}/actions/{actionId}")
     public ResponseEntity<ActionResultResponse> performAction(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
             @PathVariable Long actionId) {

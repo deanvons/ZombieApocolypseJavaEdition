@@ -5,5 +5,6 @@ public enum AuditActionType {
     SKILL_ADDED,
     SKILL_REMOVED,
     ITEM_LOADED,
+    ITEM_REMOVED,
     ACTION_PERFORMED
 }
