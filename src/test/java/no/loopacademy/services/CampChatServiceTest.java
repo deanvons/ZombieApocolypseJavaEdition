@@ -2,6 +2,7 @@ package no.loopacademy.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -139,16 +140,33 @@ class CampChatServiceTest {
     }
 
     @Test
-    void historyUsesVisitStartAndStableCursorForTiedTimestamps() {
+    void historyWithoutCursorReturnsLatestMessagesInChronologicalOrder() {
+        CampMessage beforeVisit = new CampMessage(camp, survivor, "sent while away", STARTED_AT.minusSeconds(60));
+        CampMessage duringVisit = new CampMessage(camp, survivor, "sent after entering", STARTED_AT.plusSeconds(1));
+        when(messageRepository.findLatestMessages(camp.getId(), PageRequest.of(0, 2)))
+                .thenReturn(List.of(duringVisit, beforeVisit));
+
+        var page = service.getMessages(KEYCLOAK_ID, VISIT_ID, 2, null);
+
+        assertEquals(List.of(beforeVisit.getId(), duringVisit.getId()), page.items().stream()
+                .map(CampChatMessageResponse::id).toList());
+        assertNull(page.nextCursor());
+    }
+
+    @Test
+    void historyAfterCursorUsesVisitStartAndStableCursorForTiedTimestamps() {
+        UUID lastSeenId = UUID.randomUUID();
+        String cursor = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                (STARTED_AT + "|" + lastSeenId).getBytes(StandardCharsets.UTF_8));
         Instant tiedTime = STARTED_AT.plusSeconds(1);
         CampMessage first = new CampMessage(camp, survivor, "one", tiedTime);
         CampMessage second = new CampMessage(camp, survivor, "two", tiedTime);
         CampMessage third = new CampMessage(camp, survivor, "three", tiedTime);
         when(messageRepository.findVisitMessages(
-                camp.getId(), STARTED_AT, null, null, PageRequest.of(0, 3)))
+                camp.getId(), STARTED_AT, STARTED_AT, lastSeenId, PageRequest.of(0, 3)))
                 .thenReturn(List.of(first, second, third));
 
-        var page = service.getMessages(KEYCLOAK_ID, VISIT_ID, 2, null);
+        var page = service.getMessages(KEYCLOAK_ID, VISIT_ID, 2, cursor);
 
         assertEquals(List.of(first.getId(), second.getId()), page.items().stream()
                 .map(CampChatMessageResponse::id).toList());
@@ -156,7 +174,7 @@ class CampChatServiceTest {
                 (tiedTime + "|" + second.getId()).getBytes(StandardCharsets.UTF_8));
         assertEquals(expectedCursor, page.nextCursor());
         verify(messageRepository).findVisitMessages(
-                camp.getId(), STARTED_AT, null, null, PageRequest.of(0, 3));
+                camp.getId(), STARTED_AT, STARTED_AT, lastSeenId, PageRequest.of(0, 3));
     }
 
     @Test

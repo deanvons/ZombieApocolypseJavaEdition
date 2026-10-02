@@ -77,10 +77,13 @@ public class CampChatService {
         }
 
         CursorPosition position = decodeCursor(cursor);
+        if (position == null) {
+            return getLatestMessages(visit, limit);
+        }
+        // With a cursor (e.g. recovering after a dropped event stream): messages after it, from the visit start on
         List<CampMessage> results = messageRepository.findVisitMessages(
                 visit.getCamp().getId(), visit.getStartedAt(),
-                position == null ? null : position.createdAt(),
-                position == null ? null : position.id(),
+                position.createdAt(), position.id(),
                 PageRequest.of(0, limit + 1));
         boolean hasMore = results.size() > limit;
         List<CampChatMessageResponse> items = results.stream()
@@ -89,6 +92,19 @@ public class CampChatService {
                 .toList();
         String nextCursor = hasMore ? encodeCursor(items.get(items.size() - 1)) : null;
         return new CampChatPageResponse(items, nextCursor);
+    }
+
+    // Entering Camp (no cursor): the camp's newest messages, including ones sent before this visit,
+    // so players see what was said while they were away. Fetched newest-first, then reversed to
+    // chronological order. nextCursor is null since nothing is newer; older messages are not paged.
+    private CampChatPageResponse getLatestMessages(CampChatVisit visit, int limit) {
+        List<CampChatMessageResponse> items = messageRepository
+                .findLatestMessages(visit.getCamp().getId(), PageRequest.of(0, limit))
+                .reversed()
+                .stream()
+                .map(CampChatService::toResponse)
+                .toList();
+        return new CampChatPageResponse(items, null);
     }
 
     @Transactional
