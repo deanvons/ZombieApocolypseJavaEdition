@@ -58,4 +58,6 @@ public enum Skill {
     TrapSetting,            // Designing traps for defense or hunting.
     Cooking,                // Preparing nutritious meals from raw ingredients.
     WaterPurification,      // Knowledge of finding and purifying water for safe drinking.
+
+    FIFABoss, //Linus :)
 }

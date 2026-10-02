@@ -26,7 +26,14 @@ public enum SurvivorType{
     TESTSURVIVOR(
         createAttributes(10,10,10,10,10,10,10),
         List.of(Skill.WeaponMaintenance, Skill.BluntWeapons)
-    );
+    ),
+    
+     SWEDISH(
+        createAttributes(5,6,9,7,4,3,10),
+        List.of(Skill.FIFABoss, Skill.FireStarting, Skill.WaterPurification, Skill.MotivationalSpeaking)
+
+    ),
+    ;
 
 
 
