@@ -24,6 +24,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import no.loopacademy.exceptions.OverloadedException;
+import no.loopacademy.exceptions.ForbiddenException;
 import no.loopacademy.exceptions.ResourceNotFoundException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 
@@ -105,6 +106,17 @@ public class GlobalExceptionHandlerTest {
 
         // ASSERT
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(expectedBody, response.getBody());
+    }
+
+    @Test
+    void testHandleForbidden_shouldReturn403WithMessage() {
+        ForbiddenException exception = new ForbiddenException("You do not own this survivor");
+        ErrorResponse expectedBody = new ErrorResponse(403, "You do not own this survivor");
+
+        ResponseEntity<ErrorResponse> response = handler.handleForbidden(exception);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
         assertEquals(expectedBody, response.getBody());
     }
 
