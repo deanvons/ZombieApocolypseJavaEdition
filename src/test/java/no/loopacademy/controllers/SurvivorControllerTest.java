@@ -2,6 +2,7 @@ package no.loopacademy.controllers;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,6 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.ResourceConflictException;
+import no.loopacademy.exceptions.ForbiddenException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.config.authConfig;
@@ -296,6 +298,26 @@ class SurvivorControllerTest {
 
         verify(survivorService).addSkill(user, survivorId, Skill.Accuracy);
         verify(survivorService).findById(survivorId);
+    }
+
+    @Test
+        void loadItem_NonOwnerReturns403() throws Exception {
+        String expectedErrorMessage = "You do not own this survivor";
+        Tool expectedItem = new Tool(itemMedkit, itemMedkitWeight, itemMedkitDurability);
+        doThrow(new ForbiddenException(expectedErrorMessage))
+            .when(survivorService).loadItem(user, survivorId, expectedItem);
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(post("/api/survivors/" + survivorId + "/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"type\":\"tool\",\"name\":\"" + itemMedkit
+                    + "\",\"weight\":" + itemMedkitWeight
+                    + ",\"durability\":" + itemMedkitDurability + "}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value(expectedErrorMessage));
+
+        verify(survivorService).loadItem(user, survivorId, expectedItem);
     }
 
     @Test
