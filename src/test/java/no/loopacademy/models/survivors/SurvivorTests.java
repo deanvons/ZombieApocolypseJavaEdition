@@ -66,13 +66,13 @@ public class SurvivorTests {
     void leaderShouldBeCreatedWithCorrectAttributes() {
         // Arrange
         SurvivorAttributes expectedAttributes = new SurvivorAttributes();
-        expectedAttributes.setStrength(4);
-        expectedAttributes.setEndurance(3);
-        expectedAttributes.setAgility(3);
-        expectedAttributes.setCourage(7);
-        expectedAttributes.setIntelligence(6);
-        expectedAttributes.setLeadership(9);
-        expectedAttributes.setTrustworthiness(7);
+        expectedAttributes.setStrength(10);
+        expectedAttributes.setEndurance(10);
+        expectedAttributes.setAgility(10);
+        expectedAttributes.setCourage(10);
+        expectedAttributes.setIntelligence(10);
+        expectedAttributes.setLeadership(10);
+        expectedAttributes.setTrustworthiness(10);
 
         // Act
         Survivor leader = new Survivor(survivorName, SurvivorType.LEADER);

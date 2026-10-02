@@ -24,7 +24,7 @@ public enum SurvivorType{
     ),
 
     LEADER(
-        createAttributes(4,3,7,6,7,3,9),
+        createAttributes(10,10,10,10,10,10,10),
         List.of(Skill.Leadership, Skill.MotivationalSpeaking, Skill.Negotiation)
     ),
 
