@@ -2,17 +2,12 @@ package no.loopacademy.services;
 
 import java.util.List;
 
+import no.loopacademy.exceptions.*;
 import org.hibernate.Hibernate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import no.loopacademy.exceptions.ActionNotFoundException;
-import no.loopacademy.exceptions.ForbiddenException;
-import no.loopacademy.exceptions.OverloadedException;
-import no.loopacademy.exceptions.ResourceConflictException;
-import no.loopacademy.exceptions.SurvivorNotFoundException;
-import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionResult;
 import no.loopacademy.models.audit.AuditActionType;
@@ -158,6 +153,22 @@ public class SurvivorService {
         auditEntryService.create(actor, AuditActionType.ITEM_LOADED, "Survivor", id,
                 "Item " + item.getName() + " loaded to survivor " + survivor.getName());
     }
+
+    @Transactional
+    public void removeItem(UserProfile actor, Long id, Long itemId) {
+        Survivor survivor = survivorRepository.findById(id)
+                .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        verifyOwnership(actor, survivor);
+        Item item = survivor.getGear().stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Item with id: " + itemId + " not found on survivor with id: " + id));
+        survivor.getGear().remove(item);
+        auditEntryService.create(actor, AuditActionType.ITEM_REMOVED, "Survivor", id,
+                "Item " + item.getName() + " removed from survivor " + survivor.getName());
+    }
+
 
     @Transactional
     public ActionResult performAction(UserProfile actor, Long id, Long actionId) {
