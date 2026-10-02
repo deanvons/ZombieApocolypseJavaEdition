@@ -22,6 +22,8 @@ import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
 import no.loopacademy.models.userprofile.UserProfile;
 import no.loopacademy.repositories.ActionRepository;
+import no.loopacademy.repositories.CampChatVisitRepository;
+import no.loopacademy.repositories.CampMessageRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.repositories.UserProfileRepository;
 
@@ -32,17 +34,23 @@ public class SurvivorService {
     private final ActionRepository actionRepository;
     private final UserProfileRepository userProfileRepository;
     private final AuditEntryService auditEntryService;
+    private final CampChatVisitRepository campChatVisitRepository;
+    private final CampMessageRepository campMessageRepository;
 
     public SurvivorService(
         SurvivorRepository survivorRepository,
         ActionRepository actionRepository,
         UserProfileRepository userProfileRepository,
-        AuditEntryService auditEntryService
+        AuditEntryService auditEntryService,
+        CampChatVisitRepository campChatVisitRepository,
+        CampMessageRepository campMessageRepository
     ) {
         this.survivorRepository = survivorRepository;
         this.actionRepository = actionRepository;
         this.userProfileRepository = userProfileRepository;
         this.auditEntryService = auditEntryService;
+        this.campChatVisitRepository = campChatVisitRepository;
+        this.campMessageRepository = campMessageRepository;
     }
 
     // The controller looks up the user (from the JWT) and passes it in.
@@ -113,6 +121,9 @@ public class SurvivorService {
     public void deleteSurvivorById( Long id){
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        // camp_chat_visit and camp_message have foreign keys to survivor, so their rows must be deleted first
+        campChatVisitRepository.deleteBySurvivor(survivor);
+        campMessageRepository.deleteBySender(survivor);
         survivor.getUser().setSurvivor(null);
         survivorRepository.delete(survivor);
 

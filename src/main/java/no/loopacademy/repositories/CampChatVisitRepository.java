@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import no.loopacademy.models.camp.CampChatVisit;
+import no.loopacademy.models.survivors.Survivor;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CampChatVisitRepository extends JpaRepository<CampChatVisit, UUID> {
@@ -13,4 +14,6 @@ public interface CampChatVisitRepository extends JpaRepository<CampChatVisit, UU
             UUID id, String keycloakId, Instant now);
 
     int deleteByExpiresAtBefore(Instant now);
+
+    void deleteBySurvivor(Survivor survivor);
 }

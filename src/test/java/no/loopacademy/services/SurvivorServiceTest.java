@@ -10,18 +10,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 
 import no.loopacademy.repositories.ActionRepository;
+import no.loopacademy.repositories.CampChatVisitRepository;
+import no.loopacademy.repositories.CampMessageRepository;
 import no.loopacademy.repositories.SurvivorRepository;
 import no.loopacademy.repositories.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,6 +57,10 @@ public class SurvivorServiceTest {
     private AuditEntryService auditEntryService;
     @Mock
     private UserProfileRepository userProfileRepository;
+    @Mock
+    private CampChatVisitRepository campChatVisitRepository;
+    @Mock
+    private CampMessageRepository campMessageRepository;
 
     private UserProfile actor;
 
@@ -300,6 +308,26 @@ public class SurvivorServiceTest {
                 survivorService.loadItem(actor, survivor.getId(), item));
 
         assertEquals(List.of(), survivor.getGear());
+    }
+
+    @Test
+    void deleteSurvivorById_ExistingSurvivor_shouldDeleteCampRowsBeforeSurvivor() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+
+        survivorService.deleteSurvivorById(survivor.getId());
+
+        // camp_chat_visit and camp_message reference the survivor, so the database rejects deleting it first
+        InOrder order = inOrder(campChatVisitRepository, campMessageRepository, repository);
+        order.verify(campChatVisitRepository).deleteBySurvivor(survivor);
+        order.verify(campMessageRepository).deleteBySender(survivor);
+        order.verify(repository).delete(survivor);
+    }
+
+    @Test
+    void deleteSurvivorById_UnknownSurvivor_shouldThrowSurvivorNotFoundException() {
+        assertThrows(SurvivorNotFoundException.class, () -> {
+            survivorService.deleteSurvivorById(unknownSurvivorId);
+        });
     }
 
     // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule
