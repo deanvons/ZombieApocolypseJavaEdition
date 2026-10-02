@@ -61,4 +61,37 @@ public class SurvivorTests {
         assertEquals(expectedSkills, actualSkills);
 
     }
+
+    @Test
+    void leaderShouldBeCreatedWithCorrectAttributes() {
+        // Arrange
+        SurvivorAttributes expectedAttributes = new SurvivorAttributes();
+        expectedAttributes.setStrength(4);
+        expectedAttributes.setEndurance(3);
+        expectedAttributes.setAgility(3);
+        expectedAttributes.setCourage(7);
+        expectedAttributes.setIntelligence(6);
+        expectedAttributes.setLeadership(9);
+        expectedAttributes.setTrustworthiness(7);
+
+        // Act
+        Survivor leader = new Survivor(survivorName, SurvivorType.LEADER);
+        SurvivorAttributes actualAttributes = leader.getAttributes();
+
+        // Assert
+        assertEquals(expectedAttributes, actualAttributes);
+    }
+
+    @Test
+    void leaderShouldBeCreatedWithCorrectSkills() {
+        // Arrange
+        List<Skill> expectedSkills = List.of(Skill.Leadership, Skill.MotivationalSpeaking, Skill.Negotiation);
+
+        // Act
+        Survivor leader = new Survivor(survivorName, SurvivorType.LEADER);
+        List<Skill> actualSkills = leader.getSkills();
+
+        // Assert
+        assertEquals(expectedSkills, actualSkills);
+    }
 }
