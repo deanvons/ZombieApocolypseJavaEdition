@@ -38,6 +38,11 @@ public enum SurvivorType{
         List.of(Skill.FIFABoss, Skill.FireStarting, Skill.WaterPurification, Skill.MotivationalSpeaking)
 
     ),
+    EXTREME(
+        createAttributes(8,5,7,8,10,2,8),
+        List.of(Skill.SmokeBreaks, Skill.ImprovisedCombat, Skill.QuickDraw, Skill.Pharmacology, Skill.Intimidation)
+
+    )
     ;
 
 

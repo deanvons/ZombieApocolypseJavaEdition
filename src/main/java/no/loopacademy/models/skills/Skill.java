@@ -60,4 +60,5 @@ public enum Skill {
     WaterPurification,      // Knowledge of finding and purifying water for safe drinking.
 
     FIFABoss, //Linus :)
+    SmokeBreaks,
 }
