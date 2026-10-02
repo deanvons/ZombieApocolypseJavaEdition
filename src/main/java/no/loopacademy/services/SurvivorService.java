@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
+import no.loopacademy.exceptions.ForbiddenException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
@@ -102,6 +103,12 @@ public class SurvivorService {
         Hibernate.initialize(survivor.getGear());
     }
 
+    private void verifyOwnership(UserProfile actor, Survivor survivor) {
+        if (!actor.owns(survivor)) {
+            throw new ForbiddenException("You do not own this survivor");
+        }
+    }
+
     @Transactional
     public void deleteSurvivorById(Long id){
         Survivor survivor = survivorRepository.findById(id)
@@ -113,6 +120,7 @@ public class SurvivorService {
     public void addSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        verifyOwnership(actor, survivor);
         if (!survivor.getSkills().contains(skill)) {
             survivor.getSkills().add(skill);
             auditEntryService.create(actor, AuditActionType.SKILL_ADDED, "Survivor", id,
@@ -124,6 +132,7 @@ public class SurvivorService {
     public void removeSkill(UserProfile actor, Long id, Skill skill) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        verifyOwnership(actor, survivor);
         if (survivor.getSkills().contains(skill)) {
             survivor.getSkills().remove(skill);
             auditEntryService.create(actor, AuditActionType.SKILL_REMOVED, "Survivor", id,
@@ -135,6 +144,7 @@ public class SurvivorService {
     public void loadItem(UserProfile actor, Long id, Item item) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        verifyOwnership(actor, survivor);
         double currentLoad = survivor.getGear().stream()
                 .mapToDouble(Item::getWeight)
                 .sum();
@@ -151,6 +161,7 @@ public class SurvivorService {
     public ActionResult performAction(UserProfile actor, Long id, Long actionId) {
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        verifyOwnership(actor, survivor);
         Action action = actionRepository.findById(actionId)
                 .orElseThrow(() -> new ActionNotFoundException("Action not found"));
         double effectiveness = 0.0;
