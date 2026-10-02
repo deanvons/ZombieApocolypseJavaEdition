@@ -22,7 +22,12 @@ public enum SurvivorType{
         List.of(Skill.ImprovisedCombat, Skill.StealthCombat, Skill.Intimidation, Skill.TrapSetting)
 
     ),
-    
+
+    LEADER(
+        createAttributes(10,10,10,10,10,10,10),
+        List.of(Skill.Leadership, Skill.MotivationalSpeaking, Skill.Negotiation)
+    ),
+
     TESTSURVIVOR(
         createAttributes(10,10,10,10,10,10,10),
         List.of(Skill.WeaponMaintenance, Skill.BluntWeapons)
