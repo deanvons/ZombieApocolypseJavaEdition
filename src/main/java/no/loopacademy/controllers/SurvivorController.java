@@ -131,4 +131,12 @@ public class SurvivorController {
         return ResponseEntity.ok(new ActionResultResponse(id, actionId, result.score()));
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<SurvivorResponse> deleteMySurvivor(@AuthenticationPrincipal Jwt jwt) {
+        UserProfile user = userProfileService.findByKeycloakId(jwt.getSubject()); // 404 if no profile
+        Survivor survivor = survivorService.findByUser(user);
+        survivorService.deleteSurvivorById(survivor.getId());
+        return ResponseEntity.noContent().build();
+    }
+
 }
