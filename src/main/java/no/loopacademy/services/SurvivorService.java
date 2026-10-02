@@ -110,10 +110,12 @@ public class SurvivorService {
     }
 
     @Transactional
-    public void deleteSurvivorById(Long id){
+    public void deleteSurvivorById( Long id){
         Survivor survivor = survivorRepository.findById(id)
                 .orElseThrow(() -> new SurvivorNotFoundException("Survivor not found"));
+        survivor.getUser().setSurvivor(null);
         survivorRepository.delete(survivor);
+
     }
 
     @Transactional
