@@ -5,6 +5,7 @@ import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -101,11 +102,17 @@ public class ActionService {
 
     @Transactional(readOnly = true)
     public List<Action> findAll() {
-        return actionRepository.findAll();
+        List<Action> actions = actionRepository.findAll();
+        actions.forEach(action -> Hibernate.initialize(action.getRequiredItems()));
+        return actions;
     }
 
+    // open-in-view is off, so requiredItems must be loaded before the transaction ends,
+    // otherwise mapping to a DTO in the controller throws LazyInitializationException
     @Transactional(readOnly = true)
     public Action findById(Long id) {
-        return actionRepository.findById(id).orElseThrow(()->new ActionNotFoundException("Action not found"));
+        Action action = actionRepository.findById(id).orElseThrow(()->new ActionNotFoundException("Action not found"));
+        Hibernate.initialize(action.getRequiredItems());
+        return action;
     }
 }

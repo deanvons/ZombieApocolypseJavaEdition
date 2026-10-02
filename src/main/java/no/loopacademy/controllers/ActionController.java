@@ -35,7 +35,8 @@ public class ActionController {
 
     @Operation(
             summary = "Get all actions.",
-            description = "Returns every action a survivor can perform."
+            description = "Returns every action, with the items a survivor needs to perform it (requiredItems). "
+                    + "An item's name is null when any item of that type will do."
     )
     @ApiResponse(responseCode = "200", description = "List of all actions.")
     @GetMapping
@@ -46,7 +47,7 @@ public class ActionController {
 
     @Operation(
             summary = "Get action by id.",
-            description = "Returns the action with the given id."
+            description = "Returns the action with the given id, with the items a survivor needs to perform it."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "The action was found."),
