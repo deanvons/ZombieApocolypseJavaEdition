@@ -1,5 +1,6 @@
 package no.loopacademy.controllers;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -19,6 +20,7 @@ import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.mappers.ActionMapperImpl;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
+import no.loopacademy.models.actions.RequiredItem;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.services.ActionService;
 
@@ -65,7 +67,9 @@ class ActionControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(expectedActionCount))
             .andExpect(jsonPath("$[0].name").value(expectedActionName))
-            .andExpect(jsonPath("$[0].type").value(expectedActionType));
+            .andExpect(jsonPath("$[0].type").value(expectedActionType))
+            .andExpect(jsonPath("$[0].requiredItems").isArray())     // [] rather than null when nothing is required
+            .andExpect(jsonPath("$[0].requiredItems").isEmpty());
     }
 
     @Test
@@ -94,6 +98,26 @@ class ActionControllerTest {
             .andExpect(jsonPath("$.id").value(expectedActionId))
             .andExpect(jsonPath("$.name").value(expectedActionName))
             .andExpect(jsonPath("$.type").value(expectedActionType));
+    }
+
+    @Test
+    void getActionByIdShouldReturnRequiredItems() throws Exception {
+        //Arrange
+        Long actionId = 1L;
+        Action heal = new Action(actionName, actionType, actionEffect, actionTarget, actionAttributeWeights);
+        heal.setId(actionId);
+        heal.getRequiredItems().add(new RequiredItem("weapon", null));
+        heal.getRequiredItems().add(new RequiredItem("tool", "First Aid Kit"));
+        when(actionService.findById(actionId)).thenReturn(heal);
+
+        //Act + assert
+        mockMvc.perform(get("/api/actions/" + actionId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.requiredItems.length()").value(2))
+            .andExpect(jsonPath("$.requiredItems[0].type").value("weapon"))
+            .andExpect(jsonPath("$.requiredItems[0].name").value(nullValue()))
+            .andExpect(jsonPath("$.requiredItems[1].type").value("tool"))
+            .andExpect(jsonPath("$.requiredItems[1].name").value("First Aid Kit"));
     }
 
 

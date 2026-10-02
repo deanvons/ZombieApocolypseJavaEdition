@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import no.loopacademy.dtos.request.ItemLoadRequest;
 import no.loopacademy.dtos.request.SkillAddRequest;
@@ -132,6 +135,17 @@ public class SurvivorController {
     }
 
 
+    @Operation(
+            summary = "Perform an action.",
+            description = "The survivor performs the action and gets an effectiveness score. "
+                    + "The survivor's gear must include every item the action requires."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "The action was performed."),
+            @ApiResponse(responseCode = "400", description = "The survivor does not have the required items."),
+            @ApiResponse(responseCode = "403", description = "The survivor belongs to another player."),
+            @ApiResponse(responseCode = "404", description = "No survivor or action exists with the given id.")
+    })
     @PostMapping("/{id}/actions/{actionId}")
     public ResponseEntity<ActionResultResponse> performAction(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
             @PathVariable Long actionId) {

@@ -188,6 +188,9 @@ public class SurvivorService {
         verifyOwnership(actor, survivor);
         Action action = actionRepository.findById(actionId)
                 .orElseThrow(() -> new ActionNotFoundException("Action not found"));
+        if (!action.canBePerformedWith(survivor.getGear())) {
+            throw new MissingRequiredItemsException("You do not have the required items");
+        }
         double effectiveness = 0.0;
 
         double strengthContrib = survivor.getAttributes().getStrength() * action.getAttributeWeights().getStrength();

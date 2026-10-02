@@ -1,6 +1,11 @@
 package no.loopacademy.models.actions;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -8,7 +13,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import no.loopacademy.models.attributes.AttributeWeights;
+import no.loopacademy.models.items.Item;
 
 @Entity
 public class Action {
@@ -25,6 +32,11 @@ public class Action {
 
     @Embedded
     private AttributeWeights attributeWeights;
+
+    // Empty means any survivor can perform the action
+    @ElementCollection
+    @CollectionTable(name = "action_required_item", joinColumns = @JoinColumn(name = "action_id"))
+    private List<RequiredItem> requiredItems = new ArrayList<>();
 
     protected Action() {
     }
@@ -83,5 +95,19 @@ public class Action {
 
     public void setAttributeWeights(AttributeWeights attributeWeights) {
         this.attributeWeights = attributeWeights;
+    }
+
+    public List<RequiredItem> getRequiredItems() {
+        return requiredItems;
+    }
+
+    public void setRequiredItems(List<RequiredItem> requiredItems) {
+        this.requiredItems = requiredItems;
+    }
+
+    // Every requirement must be met by at least one item in the gear
+    public boolean canBePerformedWith(List<Item> gear) {
+        return requiredItems.stream()
+                .allMatch(requirement -> gear.stream().anyMatch(requirement::isMetBy));
     }
 }

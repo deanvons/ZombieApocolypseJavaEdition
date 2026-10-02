@@ -18,3 +18,19 @@ FROM (VALUES
     ('Persuade', 'Persuade', 'Convince another person', 'Person', 0.0, 0.0, 0.1, 0.0, 0.1, 0.4, 0.4)
 ) AS v(name, type, effect, target, strength, endurance, agility, courage, intelligence, leadership, trustworthiness)
 WHERE NOT EXISTS (SELECT 1 FROM action a WHERE a.name = v.name);
+
+-- Items each action requires: type is 'tool' or 'weapon', name NULL means any item of that type.
+-- Actions not listed (Forage, Persuade) need nothing. Same NOT EXISTS pattern, so it is safe to repeat;
+-- IS NOT DISTINCT FROM so a NULL name counts as a match.
+INSERT INTO action_required_item (action_id, type, name)
+SELECT a.id, v.type, v.name
+FROM (VALUES
+    ('Attack', 'weapon', NULL),
+    ('Heal', 'tool', 'First Aid Kit'),
+    ('Build Shelter', 'tool', NULL)
+) AS v(action_name, type, name)
+JOIN action a ON a.name = v.action_name
+WHERE NOT EXISTS (
+    SELECT 1 FROM action_required_item r
+    WHERE r.action_id = a.id AND r.type = v.type AND r.name IS NOT DISTINCT FROM v.name
+);

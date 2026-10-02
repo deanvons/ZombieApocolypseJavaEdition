@@ -1,7 +1,9 @@
 package no.loopacademy.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.models.actions.Action;
 import no.loopacademy.models.actions.ActionType;
+import no.loopacademy.models.actions.RequiredItem;
 import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.repositories.ActionRepository;
 
@@ -37,6 +40,7 @@ public class ActionServiceTest {
                 action(3L, "Forage", ActionType.Forage),
                 action(4L, "Build Shelter", ActionType.Build),
                 action(5L, "Persuade", ActionType.Persuade));
+        actions.getFirst().getRequiredItems().add(new RequiredItem("weapon", null));
 
         when(actionRepository.findAll()).thenReturn(actions);
         when(actionRepository.findById(primaryActionId)).thenReturn(Optional.of(actions.getFirst()));
@@ -57,6 +61,22 @@ public class ActionServiceTest {
 
         assertEquals(primaryActionName, action.getName());
         assertEquals(primaryActionType, action.getType());
+    }
+
+    @Test
+    void shouldFindActionWithRequiredItems() {
+        Action action = actionService.findById(primaryActionId);
+
+        assertEquals(1, action.getRequiredItems().size());
+        assertEquals("weapon", action.getRequiredItems().getFirst().getType());
+        assertNull(action.getRequiredItems().getFirst().getName());
+    }
+
+    @Test
+    void shouldReturnEmptyRequiredItemsForActionsWithoutRequirements() {
+        List<Action> actions = actionService.findAll();
+
+        assertTrue(actions.stream().skip(1).allMatch(action -> action.getRequiredItems().isEmpty()));
     }
 
     @Test

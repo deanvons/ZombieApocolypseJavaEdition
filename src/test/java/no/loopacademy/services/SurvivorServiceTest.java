@@ -34,11 +34,19 @@ import org.mockito.quality.Strictness;
 
 import no.loopacademy.exceptions.ActionNotFoundException;
 import no.loopacademy.exceptions.ForbiddenException;
+import no.loopacademy.exceptions.MissingRequiredItemsException;
 import no.loopacademy.exceptions.OverloadedException;
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
+import no.loopacademy.models.actions.Action;
+import no.loopacademy.models.actions.ActionResult;
+import no.loopacademy.models.actions.ActionType;
+import no.loopacademy.models.actions.RequiredItem;
+import no.loopacademy.models.attributes.AttributeWeights;
 import no.loopacademy.models.items.Item;
+import no.loopacademy.models.items.Tool;
+import no.loopacademy.models.items.Weapon;
 import no.loopacademy.models.skills.Skill;
 import no.loopacademy.models.survivors.Survivor;
 import no.loopacademy.models.survivors.SurvivorType;
@@ -300,6 +308,60 @@ public class SurvivorServiceTest {
     }
 
     @Test
+    void performAction_HasRequiredItem_shouldReturnResult() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+        survivor.getGear().add(new Weapon(itemName, itemWeight, 10.0));
+        Action action = actionRequiring(new RequiredItem("weapon", null));
+
+        ActionResult result = survivorService.performAction(actor, survivor.getId(), actionId);
+
+        assertEquals(action, result.action());
+    }
+
+    @Test
+    void performAction_MissingRequiredItem_shouldThrowMissingRequiredItemsException() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+        survivor.getGear().add(new Weapon(itemName, itemWeight, 10.0));
+        actionRequiring(new RequiredItem("tool", "First Aid Kit"));
+
+        MissingRequiredItemsException exception = assertThrows(MissingRequiredItemsException.class, () ->
+                survivorService.performAction(actor, survivor.getId(), actionId));
+
+        assertEquals("You do not have the required items", exception.getMessage());
+    }
+
+    @Test
+    void performAction_RequiredItemNameInOtherCase_shouldReturnResult() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+        survivor.getGear().add(new Tool("first AID kit", itemWeight, 10.0));
+        Action action = actionRequiring(new RequiredItem("tool", "First Aid Kit"));
+
+        ActionResult result = survivorService.performAction(actor, survivor.getId(), actionId);
+
+        assertEquals(action, result.action());
+    }
+
+    @Test
+    void performAction_MeetsOnlySomeRequirements_shouldThrowMissingRequiredItemsException() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+        survivor.getGear().add(new Weapon(itemName, itemWeight, 10.0));
+        actionRequiring(new RequiredItem("weapon", null), new RequiredItem("tool", null));
+
+        assertThrows(MissingRequiredItemsException.class, () ->
+                survivorService.performAction(actor, survivor.getId(), actionId));
+    }
+
+    @Test
+    void performAction_NoRequiredItems_shouldReturnResultEvenWithEmptyGear() {
+        Survivor survivor = survivorService.create(actor, survivorName, survivorType);
+        Action action = actionRequiring();
+
+        ActionResult result = survivorService.performAction(actor, survivor.getId(), actionId);
+
+        assertEquals(action, result.action());
+    }
+
+    @Test
     void loadItem_OtherUsersSurvivor_shouldThrowForbiddenException() {
         Survivor survivor = survivorService.create(otherUser(), survivorName, survivorType);
         Item item = new Item(itemName, itemWeight);
@@ -328,6 +390,14 @@ public class SurvivorServiceTest {
         assertThrows(SurvivorNotFoundException.class, () -> {
             survivorService.deleteSurvivorById(unknownSurvivorId);
         });
+    }
+
+    // An action with the given requirements, returned when looking up actionId
+    private Action actionRequiring(RequiredItem... requiredItems) {
+        Action action = new Action("GenericActionName", ActionType.Attack, "", "", new AttributeWeights());
+        action.getRequiredItems().addAll(List.of(requiredItems));
+        when(actionRepository.findById(actionId)).thenReturn(Optional.of(action));
+        return action;
     }
 
     // A new profile per survivor, so tests that create several survivors don't hit the one-survivor rule

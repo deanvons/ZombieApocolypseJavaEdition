@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import no.loopacademy.exceptions.ResourceConflictException;
 import no.loopacademy.exceptions.ForbiddenException;
+import no.loopacademy.exceptions.MissingRequiredItemsException;
 import no.loopacademy.exceptions.SurvivorNotFoundException;
 import no.loopacademy.exceptions.UserAlreadyHasSurvivorException;
 import no.loopacademy.config.authConfig;
@@ -366,6 +367,20 @@ class SurvivorControllerTest {
                 .andExpect(jsonPath("$.effectiveness").value(expectedEffectiveness));
 
         verify(survivorService).performAction(user, survivorId, actionId);
+    }
+
+    @Test
+    void performAction_MissingRequiredItems_Returns400() throws Exception {
+        String expectedErrorMessage = "You do not have the required items";
+        when(survivorService.performAction(user, survivorId, actionId))
+                .thenThrow(new MissingRequiredItemsException(expectedErrorMessage));
+
+        loginAs(KEYCLOAK_ID);
+
+        mockMvc.perform(post("/api/survivors/" + survivorId + "/actions/" + actionId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(expectedErrorMessage));
     }
 
     // Security filters are off in this class (addFilters = false), so jwt() from spring-security-test
