@@ -9,7 +9,6 @@ public enum ActionType {
 
     // Survival Actions
     Forage,              // Search for food, herbs, or natural resources
-    Scavenge,            // Look for supplies in urban or abandoned environments
     Build,               // Create shelters, barricades, or defensive structures
     Navigate,            // Guide the group through unknown areas safely
     // Specialized Actions

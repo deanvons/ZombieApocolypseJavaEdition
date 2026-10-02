@@ -76,7 +76,7 @@ public class ActionTests {
         List<Action> actions = List.of(
                 action(1L, "Attack", ActionType.Attack, weights(0.6, 0.2, 0.0, 0.0, 0.1, 0.1, 0.0)),
                 action(2L, "Heal", ActionType.Heal, weights(0.0, 0.1, 0.4, 0.4, 0.0, 0.1, 0.0)),
-                action(3L, "Scavenge", ActionType.Scavenge, weights(0.1, 0.4, 0.1, 0.3, 0.0, 0.1, 0.0)),
+                action(3L, "Forage", ActionType.Forage, weights(0.1, 0.4, 0.1, 0.3, 0.0, 0.1, 0.0)),
                 action(4L, "Build Shelter", ActionType.Build, weights(0.4, 0.1, 0.0, 0.2, 0.1, 0.2, 0.0)),
                 action(5L, "Persuade", ActionType.Persuade, weights(0.0, 0.1, 0.4, 0.1, 0.0, 0.0, 0.4)));
 
