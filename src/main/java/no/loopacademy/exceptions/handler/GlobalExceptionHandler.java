@@ -113,6 +113,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .body(new ErrorResponse(409, Objects.requireNonNullElse(e.getMessage(), "No error message provided")));
     }
 
+    /**
+     * Handles ForbiddenException thrown by the service layer when a user acts on a resource they do not own.
+     * Returns 403 FORBIDDEN response, and the error message from the exception.
+     * @param e exception to handle
+     * @return ResponseEntity(status, response)
+     */
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException e) {
         return ResponseEntity
