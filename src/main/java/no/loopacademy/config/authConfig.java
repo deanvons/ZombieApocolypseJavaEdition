@@ -35,6 +35,7 @@ public class authConfig {
                  */
                 .sessionManagement(session
                         -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/camp/**"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth
                         -> auth
